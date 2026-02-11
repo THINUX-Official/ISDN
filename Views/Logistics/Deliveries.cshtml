@@ -1,0 +1,80 @@
+@model IEnumerable<ISDN.Models.Delivery>
+
+@{
+    ViewData["Title"] = "Deliveries";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-truck"></i> Deliveries</h2>
+            <p class="text-muted">View and manage all delivery schedules</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Delivery ID</th>
+                                        <th>Order ID</th>
+                                        <th>Driver</th>
+                                        <th>Status</th>
+                                        <th>Scheduled Date</th>
+                                        <th>Delivered Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var delivery in Model)
+                                    {
+                                        <tr>
+                                            <td>@delivery.DeliveryId</td>
+                                            <td>@delivery.OrderId</td>
+                                            <td>@delivery.Driver?.FullName</td>
+                                            <td>
+                                                @if (delivery.Status == "Delivered")
+                                                {
+                                                    <span class="badge bg-success">@delivery.Status</span>
+                                                }
+                                                else if (delivery.Status == "In Transit")
+                                                {
+                                                    <span class="badge bg-primary">@delivery.Status</span>
+                                                }
+                                                else if (delivery.Status == "Scheduled")
+                                                {
+                                                    <span class="badge bg-warning">@delivery.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@delivery.Status</span>
+                                                }
+                                            </td>
+                                            <td>@(delivery.ScheduledDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                            <td>@(delivery.DeliveryDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted py-5">No deliveries found</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
