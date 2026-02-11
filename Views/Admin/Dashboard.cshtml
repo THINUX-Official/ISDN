@@ -1,0 +1,103 @@
+@using ISDN.Models
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    var totalUsers = ViewBag.TotalUsers ?? 0;
+    var recentLogs = ViewBag.RecentLogs as IEnumerable<AuditLog> ?? Enumerable.Empty<AuditLog>();
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-user-shield"></i> Admin Dashboard</h2>
+            <p class="text-muted">Manage users, roles, permissions, and view system audit logs</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h3>@ViewBag.TotalUsers</h3>
+                    <p class="text-muted">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h3>Active</h3>
+                    <p class="text-muted">System Status</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
+                    <h3>@recentLogs.Count()</h3>
+                    <p class="text-muted">Recent Logs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-user-cog fa-3x text-info mb-3"></i>
+                    <h3>8</h3>
+                    <p class="text-muted">User Roles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a asp-action="UserManagement" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                    <a asp-action="AuditLogs" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-clipboard-list"></i> View Audit Logs
+                    </a>
+                    <a href="#" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-user-shield"></i> Manage Roles & Permissions
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    @if (recentLogs.Any())
+                    {
+                        <ul class="list-unstyled">
+                            @foreach (var log in recentLogs)
+                            {
+                                <li class="mb-2">
+                                    <i class="fas fa-circle text-primary" style="font-size: 0.5rem;"></i>
+                                    <strong>@log.Action</strong> - @log.Description
+                                    <br />
+                                    <small class="text-muted">@log.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No recent activity</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
