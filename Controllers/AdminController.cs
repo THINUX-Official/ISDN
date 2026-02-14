@@ -7,6 +7,9 @@ using ISDN.Repositories;
 using ISDN.Data;
 using ISDN.ViewModels;
 using ISDN.Models;
+using ISDN_Distribution.Repositories;
+using ISDN_Distribution.Models;
+
 
 namespace ISDN.Controllers
 {

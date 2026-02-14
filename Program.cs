@@ -7,6 +7,8 @@ using ISDN.Models;
 using ISDN.Services;
 using ISDN.Repositories;
 using ISDN.Middleware;
+using ISDN_Distribution.Repositories;
+using ISDN_Distribution.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,11 +88,14 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+// Program.cs එකේ මේ පේළිය එකතු කරන්න
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 
 // Add HttpContextAccessor for accessing HTTP context in services
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IRdcOrderRepository, RdcOrderRepository>();
 
 // Add Session support for temporary data storage
 builder.Services.AddSession(options =>

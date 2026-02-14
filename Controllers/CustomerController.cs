@@ -4,6 +4,8 @@ using ISDN.Constants;
 using ISDN.Repositories;
 using ISDN.Data;
 using Microsoft.EntityFrameworkCore;
+using ISDN_Distribution.Repositories;
+using ISDN_Distribution.Models;
 
 namespace ISDN.Controllers
 {
@@ -48,14 +50,16 @@ namespace ISDN.Controllers
                 return Unauthorized();
             }
 
-            // Get customer record to find their RDC
             var customer = await _customerRepository.GetByUserIdAsync(userId);
 
-            var myOrders = await _orderRepository.GetByUserIdAsync(userId);
-            
-            ViewBag.TotalOrders = myOrders.Count();
-            ViewBag.PendingOrders = myOrders.Count(o => o.Status == "Pending");
-            ViewBag.RecentOrders = myOrders.Take(5);
+            // මෙතන තමයි වැරැද්ද තිබුණේ: myOrders කියන්නේ ViewModel එකක්.
+            var myOrdersViewModel = await _orderRepository.GetByUserIdAsync(userId);
+
+            // .Orders කියන එක අනිවාර්යයෙන්ම දාන්න ඕනේ Count/Take කරන්න නම්
+            ViewBag.TotalOrders = myOrdersViewModel.Orders.Count();
+            ViewBag.PendingOrders = myOrdersViewModel.Orders.Count(o => o.Status == "Pending");
+            ViewBag.RecentOrders = myOrdersViewModel.Orders.Take(5).ToList();
+
             ViewBag.CustomerRdcId = customer?.RdcId;
             ViewBag.CustomerRdcName = customer?.Rdc?.RdcName;
 
