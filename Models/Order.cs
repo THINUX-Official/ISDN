@@ -55,6 +55,9 @@ namespace ISDN.Models
         [ForeignKey("RdcId")]
         public virtual Rdc? Rdc { get; set; }
 
+        [Column("estimated_delivery_at")]
+        public DateTime? EstimatedDeliveryAt { get; set; }
+
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
