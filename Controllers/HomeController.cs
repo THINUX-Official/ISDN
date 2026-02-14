@@ -1,17 +1,14 @@
 using System.Diagnostics;
 using ISDN.Models;
 using Microsoft.AspNetCore.Mvc;
+using ISDN_Distribution.Repositories;
+using ISDN_Distribution.Models;
 
 namespace ISDN.Controllers
 {
     public class HomeController : Controller
     {
         public IActionResult Index()
-        {
-            return View();
-        }
-
-        public IActionResult Privacy()
         {
             return View();
         }

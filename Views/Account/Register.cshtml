@@ -1,0 +1,250 @@
+@model ISDN.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Create Account";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header text-center">
+                <h1 class="auth-title">Create Account</h1>
+                <p class="auth-subtitle">Register for access to the ISDN system</p>
+            </div>
+
+            <form asp-action="Register" asp-controller="Account" method="post" class="auth-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <h5 class="section-divider"><span>Personal Information</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FirstName" class="form-label-custom"></label>
+                        <input asp-for="FirstName" class="form-input-custom" placeholder="John" />
+                        <span asp-validation-for="FirstName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="LastName" class="form-label-custom"></label>
+                        <input asp-for="LastName" class="form-input-custom" placeholder="Doe" />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label-custom"></label>
+                        <input asp-for="Email" class="form-input-custom" type="email" placeholder="you@company.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PhoneNumber" class="form-label-custom"></label>
+                        <input asp-for="PhoneNumber" class="form-input-custom" placeholder="0771234567" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <h5 class="section-divider"><span>Billing & Business</span></h5>
+                <div class="mb-3">
+                    <label asp-for="BusinessName" class="form-label-custom"></label>
+                    <input asp-for="BusinessName" class="form-input-custom" placeholder="ABC Enterprises" />
+                    <span asp-validation-for="BusinessName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="StreetAddress" class="form-label-custom"></label>
+                    <input asp-for="StreetAddress" class="form-input-custom" placeholder="No 123, Galle Road" />
+                    <span asp-validation-for="StreetAddress" class="text-danger small"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="City" class="form-label-custom"></label>
+                        <input asp-for="City" class="form-input-custom" placeholder="Colombo" />
+                        <span asp-validation-for="City" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ZipCode" class="form-label-custom"></label>
+                        <input asp-for="ZipCode" class="form-input-custom" placeholder="10100" />
+                        <span asp-validation-for="ZipCode" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <h5 class="section-divider"><span>Security</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Password" class="form-label-custom"></label>
+                        <div class="password-wrapper">
+                            <input asp-for="Password" id="registerPassword" class="form-input-custom" type="password" placeholder="Min 8 characters" />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('registerPassword', this)"></i>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label-custom"></label>
+                        <div class="password-wrapper">
+                            <input asp-for="ConfirmPassword" id="confirmPassword" class="form-input-custom" type="password" placeholder="Repeat password" />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('confirmPassword', this)"></i>
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="info-note mb-4">
+                    <i class="fas fa-clock"></i>
+                    <span>Account activation usually takes within 24 hours.</span>
+                </div>
+
+                <button type="submit" class="btn-auth-submit">
+                    <i class="fas fa-user-plus me-2"></i> Submit Registration
+                </button>
+            </form>
+
+            <div class="auth-footer mt-4 text-center">
+                <p>Already have an account? <a asp-action="Login" asp-controller="Account" class="auth-link">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Gradient Background to match Login */
+    .auth-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    /* Card Styling */
+    .auth-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 700px;
+        padding: 40px;
+    }
+
+    .auth-title {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .auth-subtitle {
+        color: #777;
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+    }
+
+    /* Section Divider Styling */
+    .section-divider {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        line-height: 0.1em;
+        margin: 25px 0 20px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #764ba2;
+        font-weight: bold;
+    }
+
+        .section-divider span {
+            background: #fff;
+            padding: 0 10px 0 0;
+        }
+
+    /* Form Elements */
+    .form-label-custom {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+        .form-input-custom:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+            outline: none;
+        }
+
+    /* Password Toggle Styling */
+    .password-wrapper {
+        position: relative;
+    }
+
+    .toggle-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #aaa;
+    }
+
+    /* Note Box */
+    .info-note {
+        background: #eef2ff;
+        border-left: 4px solid #667eea;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Submit Button */
+    .btn-auth-submit {
+        width: 100%;
+        background: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: opacity 0.3s;
+    }
+
+        .btn-auth-submit:hover {
+            opacity: 0.9;
+        }
+
+    .auth-link {
+        color: #764ba2;
+        text-decoration: none;
+        font-weight: 600;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+}
