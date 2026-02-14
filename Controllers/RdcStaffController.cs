@@ -4,24 +4,22 @@ using ISDN.Constants;
 using ISDN.Repositories;
 using ISDN.Data;
 using Microsoft.EntityFrameworkCore;
+using ISDN_Distribution.Repositories;
+using ISDN_Distribution.Models;
 
 namespace ISDN.Controllers
 {
-    /// <summary>
-    /// RDC Staff Dashboard Controller
-    /// Manages inventory and processes orders with RDC-based data partitioning
-    /// </summary>
     [Authorize(Roles = UserRoles.RdcStaff)]
     public class RdcStaffController : BaseRdcController
     {
         private readonly IProductRepository _productRepository;
-        private readonly IOrderRepository _orderRepository;
+        private readonly IRdcOrderRepository _rdcOrderRepository; // මම මෙය වෙනස් කළා
         private readonly IsdnDbContext _context;
 
-        public RdcStaffController(IProductRepository productRepository, IOrderRepository orderRepository, IsdnDbContext context)
+        public RdcStaffController(IProductRepository productRepository, IRdcOrderRepository rdcOrderRepository, IsdnDbContext context)
         {
             _productRepository = productRepository;
-            _orderRepository = orderRepository;
+            _rdcOrderRepository = rdcOrderRepository;
             _context = context;
         }
 
@@ -36,12 +34,10 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Inventory()
         {
-            // Get inventory with RDC filtering
             var inventoryQuery = _context.Inventories
                 .Include(i => i.Product)
                 .AsQueryable();
 
-            // Apply RDC filter
             inventoryQuery = ApplyRdcFilter(inventoryQuery);
 
             var inventory = await inventoryQuery
@@ -55,21 +51,53 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Orders()
         {
-            // Get orders with RDC filtering
-            var ordersQuery = _context.Orders
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                .AsQueryable();
+            int rdcId = GetUserRdcId() ?? 0;
 
-            // Apply RDC filter
-            ordersQuery = ApplyRdcFilter(ordersQuery);
+            // ViewModel එක පාවිච්චි කරලා filtered orders ටික ගන්නවා
+            var ordersWithReturns = await _rdcOrderRepository.GetOrdersByRdcAsync(rdcId);
 
-            var orders = await ordersQuery
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
+            ViewBag.RdcId = rdcId;
+            return View(ordersWithReturns);
+        }
 
-            ViewBag.RdcId = GetUserRdcId();
-            return View(orders);
+        [HttpPost]
+        public async Task<IActionResult> MarkAsPacked(int orderId)
+        {
+            int adminId = GetUserId();
+            bool success = await _rdcOrderRepository.UpdateOrderStatusAsync(orderId, "Packed", adminId);
+
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Order marked as Packed successfully!";
+            }
+            return RedirectToAction(nameof(Orders));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessReturn(int returnId, string status, string adminComment)
+        {
+            // ලොග් වී සිටින RDC Staff member ගේ User ID එක මෙතනින් ගන්නවා
+            int adminId = GetUserId();
+
+            if (string.IsNullOrEmpty(adminComment))
+            {
+                TempData["Error"] = "Please provide a comment for your decision.";
+                return RedirectToAction(nameof(Orders));
+            }
+
+            bool success = await _rdcOrderRepository.ProcessReturnAsync(returnId, status, adminComment, adminId);
+
+            if (success)
+            {
+                TempData["SuccessMessage"] = $"Return request has been {status.ToLower()} successfully.";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to process the return request.";
+            }
+
+            return RedirectToAction(nameof(Orders));
         }
     }
 }
