@@ -6,35 +6,44 @@
     <div class="row mb-4">
         <div class="col">
             <h2><i class="fas fa-warehouse"></i> RDC Staff Dashboard</h2>
-            <p class="text-muted">Manage inventory and process orders</p>
+            <p class="text-muted">View Inventory, Manage Orders and Add Products</p>
         </div>
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card text-center border-primary">
-                <div class="card-body">
-                    <i class="fas fa-boxes fa-3x text-primary mb-3"></i>
-                    <h3>0</h3>
-                    <p class="text-muted">Total Products</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-center border-warning">
-                <div class="card-body">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <h3>0</h3>
-                    <p class="text-muted">Low Stock Items</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-center border-success">
                 <div class="card-body">
-                    <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
-                    <h3>0</h3>
-                    <p class="text-muted">Orders to Process</p>
+                    <i class="fas fa-warehouse fa-3x text-success mb-3"></i>
+                    <h3>22</h3>
+                    <p class="text-muted">Available Inventory</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-boxes fa-3x text-info mb-3"></i>
+                    <h3>5</h3>
+                    <p class="text-muted">Monthly Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h3>332</h3>
+                    <p class="text-muted">Sold Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-dollar-sign fa-3x text-success mb-3"></i>
+                    <h3>213600.00</h3>
+                    <p class="text-muted">Monthly Revenue</p>
                 </div>
             </div>
         </div>
@@ -47,13 +56,13 @@
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a asp-action="Inventory" class="btn btn-outline-primary mb-2">
+                    <a asp-action="Inventory" class="btn btn-outline-success w-100 mb-2">
                         <i class="fas fa-warehouse"></i> View Inventory
                     </a>
-                    <a asp-action="Orders" class="btn btn-outline-success mb-2">
+                    <a asp-action="Orders" class="btn btn-outline-info w-100 mb-2">
                         <i class="fas fa-shopping-cart"></i> View Orders
                     </a>
-                    <a href="#" class="btn btn-outline-info mb-2">
+                    <a href="#" class="btn btn-outline-warning w-100 mb-2">
                         <i class="fas fa-plus-circle"></i> Add Product
                     </a>
                 </div>
