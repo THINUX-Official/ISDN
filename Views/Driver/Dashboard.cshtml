@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Driver Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-truck"></i> Driver Dashboard</h2>
+            <p class="text-muted">View and manage your assigned deliveries</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-calendar-day fa-3x text-primary mb-3"></i>
+                    <h3>@ViewBag.TodayDeliveries</h3>
+                    <p class="text-muted">Today's Deliveries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                    <h3>@ViewBag.PendingDeliveries</h3>
+                    <p class="text-muted">Pending Deliveries</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h3>Active</h3>
+                    <p class="text-muted">Status</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-list"></i> My Assigned Deliveries</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model != null && ((IEnumerable<dynamic>)Model).Any())
+                    {
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer</th>
+                                    <th>Scheduled Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var delivery in (IEnumerable<dynamic>)Model)
+                                {
+                                    <tr>
+                                        <td>@delivery.Order?.OrderNumber</td>
+                                        <td>@delivery.Order?.User?.FullName</td>
+                                        <td>@delivery.ScheduledDate?.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            <span class="badge bg-@(delivery.Status == "Delivered" ? "success" : delivery.Status == "In Transit" ? "warning" : "secondary")">
+                                                @delivery.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary">View Details</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No deliveries assigned yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

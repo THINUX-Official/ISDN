@@ -1,0 +1,292 @@
+﻿@model ISDN_Distribution.Models.CustomerOrdersViewModel
+
+@{
+    ViewData["Title"] = "Order History";
+}
+
+<style>
+    /* Stepper Layout Fixes */
+    .stepper-wrapper { display: flex; justify-content: space-between; margin-top: 20px; position: relative; }
+    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2; }
+    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid #ccc; width: 100%; top: 20px; left: -50%; z-index: 1; }
+    .stepper-item:first-child::before { content: none; }
+    .step-counter { width: 40px; height: 40px; border-radius: 50%; background: #ccc; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-bottom: 10px; z-index: 3; }
+    .stepper-item.completed .step-counter { background-color: #28a745; }
+    .stepper-item.completed .step-name { color: #28a745; font-weight: bold; }
+    .stepper-item.completed::before { border-bottom-color: #28a745; }
+
+    /* Order Card UI */
+    .order-card { background: #fff; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px; overflow: hidden; border: none; }
+    .product-icon { width: 45px; height: 45px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #6c757d; }
+
+    /* Return Stepper CSS */
+    .return-stepper { align-items: center; position: relative; }
+    .step-dot { width: 35px; height: 35px; border-radius: 50%; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 14px; transition: 0.3s; margin: 0 auto; }
+    .step-dot.active { background: #212529; color: white; }
+    .step-label { font-size: 11px; margin-top: 8px; font-weight: 600; color: #6c757d; }
+    .step-line { flex-grow: 1; height: 3px; background: #e9ecef; margin-bottom: 20px; transition: 0.3s; }
+    .step-line.active { background: #212529; }
+</style>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark mb-0"><i class="fas fa-shopping-bag me-2"></i> My Order History</h3>
+        <a href="#returnTrackingSection" class="btn btn-dark rounded-pill px-4 shadow-sm">
+            <i class="fas fa-truck-loading me-2"></i> Track My Returns
+        </a>
+    </div>
+
+    @foreach (var order in Model.Orders)
+    {
+        <div class="order-card p-4">
+            <div class="row align-items-center">
+                <div class="col-lg-4 border-end">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="fw-bold text-primary mb-1">#@order.OrderNumber</h5>
+                            <p class="text-muted small">@order.OrderDate.ToString("dd MMM yyyy, hh:mm tt")</p>
+                        </div>
+                        <span class="badge @(order.Status?.ToUpper() == "DELIVERED" ? "bg-success" : "bg-warning") rounded-pill">
+                            @order.Status
+                        </span>
+                    </div>
+
+                    <div class="mt-4">
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="product-icon me-3">
+                                    <i class="fas fa-box-open fa-lg"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="small fw-bold text-dark">@item.Product?.ProductName</div>
+                                    <div class="small text-muted">@item.Quantity × Rs.@(item.Product?.UnitPrice)</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="pt-3 border-top mt-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Total Amount</span>
+                            <span class="fw-bold text-dark h5">Rs.@order.TotalAmount</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8 ps-lg-5">
+                    @if (order.Status?.ToUpper() != "DELIVERED")
+                    {
+                        <div class="text-center mb-4">
+                            <span class="text-muted small"><i class="fas fa-truck me-1"></i> Live Tracking</span>
+                        </div>
+
+                        {
+                            var deadline = order.EstimatedDeliveryAt ?? order.CreatedAt.AddHours(48);
+                            if (DateTime.Now < deadline)
+                            {
+                                <div class="text-center mb-4">
+                                    <div class="alert alert-info border-0 shadow-sm rounded-pill py-2 px-4 d-inline-block">
+                                        <i class="fas fa-hourglass-half me-2 text-primary"></i>
+                                        <span class="fw-bold me-2">Guaranteed Delivery In:</span>
+                                        <span id="timer-@order.OrderNumber" class="ticking-timer font-monospace text-danger fw-bold" data-deadline="@deadline.ToString("yyyy-MM-ddTHH:mm:ss")">Calculating...</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <div class="stepper-wrapper">
+                            @{
+                                var phases = new[] { "PLACED", "PACKED", "RECEIVED_FOR_DELIVERY", "ON_THE_WAY", "DELIVERED" };
+                                var displayNames = new[] { "Placed", "Packed", "Dispatched", "On Way", "Delivered" };
+                                int currentStep = Array.IndexOf(phases, order.Status?.ToUpper() ?? "PLACED");
+                            }
+                            @for (int i = 0; i < phases.Length; i++)
+                            {
+                                <div class="stepper-item @(i <= currentStep ? "completed" : "")">
+                                    <div class="step-counter">@(i <= currentStep ? "✓" : (i + 1).ToString())</div>
+                                    <div class="step-name small">@displayNames[i]</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <div class="display-4 text-success mb-3"><i class="fas fa-check-circle"></i></div>
+                            <h4 class="fw-bold">Order Successfully Delivered!</h4>
+                            <p class="text-muted">Thank you for shopping with ISDN.</p>
+
+                            @{
+                                var deliveryTime = order.EstimatedDeliveryAt ?? order.OrderDate.AddHours(48);
+                                var hoursPassed = (DateTime.Now - deliveryTime).TotalHours;
+                                // Return valid for 72 hours
+                                if (hoursPassed <= 72 && hoursPassed >= 0)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
+                                            onclick='openReturnModal("@order.OrderNumber", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>
+                                        <i class="fas fa-undo me-2"></i> Request Return
+                                    </button>
+                                    <div class="small text-danger mt-2">Return window: @(72 - (int)hoursPassed) hours left</div>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <hr class="my-5" id="returnTrackingSection">
+
+    <div class="pb-5">
+        <h4 class="fw-bold mb-4"><i class="fas fa-history me-2 text-danger"></i> Return & Refund Status</h4>
+
+        @if (Model.MyReturns == null || !Model.MyReturns.Any())
+        {
+            <div class="card border-0 shadow-sm p-5 text-center rounded-4">
+                <i class="fas fa-box-open fa-3x text-light mb-3"></i>
+                <p class="text-muted">No return requests found.</p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var ret in Model.MyReturns)
+                {
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div>
+                                        <span class="badge bg-light text-dark border mb-2">Return ID: #@ret.ReturnId</span>
+                                        <h6 class="fw-bold mb-0">Order ID: #@ret.OrderId</h6>
+                                    </div>
+                                    <div class="text-end">
+                                        @{
+                                            var statusClass = ret.AdminStatus == "APPROVED" ? "bg-success" :
+                                                            ret.AdminStatus == "REJECTED" ? "bg-danger" : "bg-warning";
+                                        }
+                                        <span class="badge @statusClass px-3 py-2 rounded-pill shadow-sm text-white">@ret.AdminStatus</span>
+                                    </div>
+                                </div>
+
+                                <div class="return-stepper d-flex justify-content-between mt-4">
+                                    <div class="step-box text-center">
+                                        <div class="step-dot active"><i class="fas fa-file-alt"></i></div>
+                                        <div class="step-label">Requested</div>
+                                    </div>
+                                    <div class="step-line @(ret.AdminStatus != "PENDING" ? "active" : "")"></div>
+                                    <div class="step-box text-center">
+                                        <div class="step-dot @(ret.AdminStatus != "PENDING" ? "active" : "")">
+                                            <i class="fas @(ret.AdminStatus == "REJECTED" ? "fa-times" : "fa-check")"></i>
+                                        </div>
+                                        <div class="step-label">Admin Review</div>
+                                    </div>
+                                    <div class="step-line @(ret.AdminStatus == "APPROVED" ? "active" : "")"></div>
+                                    <div class="step-box text-center">
+                                        <div class="step-dot @(ret.AdminStatus == "APPROVED" ? "active" : "")"><i class="fas fa-hand-holding-usd"></i></div>
+                                        <div class="step-label">Refund</div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ret.AdminComment))
+                                {
+                                    <div class="mt-4 p-3 bg-light rounded-3 border-start border-4 @(ret.AdminStatus == "REJECTED" ? "border-danger" : "border-success")">
+                                        <small class="fw-bold d-block text-muted">Admin Note:</small>
+                                        <p class="mb-0 small italic">"@ret.AdminComment"</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="returnModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-undo me-2"></i> Return Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="SubmitReturn" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="orderId" id="modalOrderId" />
+                    <label class="fw-bold mb-2">Select items to return:</label>
+                    <div id="modalItemsList" class="mb-4 border rounded p-2 bg-light"></div>
+                    
+                    <label class="fw-bold mb-2">Reason for Return</label>
+                    <div class="mb-3">
+                        @if(Model.ReturnReasons != null) {
+                            int rIndex = 1;
+                            foreach (var reasonText in Model.ReturnReasons) {
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="reasonId" value="@rIndex" required onclick="toggleComment(@rIndex)">
+                                    <label class="form-check-label">@reasonText</label>
+                                </div>
+                                rIndex++;
+                            }
+                        }
+                    </div>
+                    <div id="commentBox" class="d-none mt-3">
+                        <textarea name="comments" class="form-control" rows="3" placeholder="Explain further..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill py-2">SUBMIT REQUEST</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openReturnModal(orderNum, items) {
+            document.getElementById('modalOrderId').value = orderNum;
+            let listHtml = '';
+            items.forEach(item => {
+                listHtml += `
+                    <div class="form-check py-2 border-bottom">
+                        <input class="form-check-input" type="checkbox" name="selectedItems" value="${item.id}" id="item_${item.id}">
+                        <label class="form-check-label d-flex justify-content-between w-100" for="item_${item.id}">
+                            <span class="small">${item.name}</span>
+                            <span class="badge bg-secondary">Qty: ${item.qty}</span>
+                        </label>
+                    </div>`;
+            });
+            document.getElementById('modalItemsList').innerHTML = listHtml;
+            new bootstrap.Modal(document.getElementById('returnModal')).show();
+        }
+
+        function toggleComment(id) {
+            const box = document.getElementById('commentBox');
+            if (id == 4) box.classList.remove('d-none');
+            else box.classList.add('d-none');
+        }
+
+        function startTimers() {
+            const timers = document.querySelectorAll('.ticking-timer');
+            setInterval(() => {
+                const now = new Date().getTime();
+                timers.forEach(timer => {
+                    const deadline = new Date(timer.getAttribute('data-deadline')).getTime();
+                    const distance = deadline - now;
+                    if (distance < 0) {
+                        timer.closest('.alert').style.display = 'none';
+                    } else {
+                        const hours = Math.floor(distance / (3600000));
+                        const minutes = Math.floor((distance % 3600000) / 60000);
+                        const seconds = Math.floor((distance % 60000) / 1000);
+                        timer.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
+                    }
+                });
+            }, 1000);
+        }
+        document.addEventListener('DOMContentLoaded', startTimers);
+    </script>
+}

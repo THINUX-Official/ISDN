@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Customer Dashboard";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="jumbotron bg-light p-5 rounded shadow-sm">
+                <h1 class="display-4">
+                    <i class="fas fa-user"></i> Customer Dashboard
+                </h1>
+                <p class="lead">Welcome to your personal dashboard</p>
+                <hr class="my-4">
+                <p>
+                    As a customer, you can browse products, place orders, and manage your account. 
+                    This dashboard provides a centralized location to monitor your activity.
+                </p>
+                <p class="mb-0">
+                    <strong>Logged in as:</strong> @User.Identity?.Name
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-bag fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Browse Products</h5>
+                    <p class="card-text">Explore our full product catalog.</p>
+                    <a href="#" class="btn btn-primary w-100">View Products</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <i class="fas fa-receipt fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">My Orders</h5>
+                    <p class="card-text">Track your current and past orders.</p>
+                    <a href="/Orders/MyOrders" class="btn btn-success w-100">View Orders</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <i class="fas fa-credit-card fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Payment History</h5>
+                    <p class="card-text">View transactions and invoices.</p>
+                    <a href="#" class="btn btn-warning w-100 text-white">View Payments</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-edit fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Profile Settings</h5>
+                    <p class="card-text">Manage your personal information.</p>
+                    <a href="#" class="btn btn-info w-100 text-white">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-success mt-4 border-0 shadow-sm" role="alert">
+        <i class="fas fa-check-circle"></i>
+        <strong>Welcome!</strong> Thank you for being our valued customer. Enjoy exclusive discounts and offers!
+    </div>
+</div>

@@ -4,47 +4,259 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ISDN</title>
-    <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ISDN.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ISDN</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+<header class="industrial-header">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand-industrial" asp-area="" asp-controller="Home" asp-action="Index">
+                ISDN
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse">
+                <ul class="navbar-nav ms-auto">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <span class="user-badge">@User.Identity.Name</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="btn-industrial btn-signout">
+                                    Sign Out
+                                </button>
+                            </form>
                         </li>
-                    </ul>
-                </div>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="btn-industrial btn-login" asp-controller="Account" asp-action="Login">
+                                Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn-industrial btn-register" asp-controller="Account" asp-action="Register">
+                                Register
+                            </a>
+                        </li>
+                    }
+                </ul>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+        </div>
+    </nav>
+</header>
+<div class="container">
+    <main role="main">
+        @RenderBody()
+    </main>
+</div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="modern-footer">
         <div class="container">
-            &copy; 2026 - ISDN - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="footer-content">
+                <span class="footer-text">&copy;ISDN - All Rights Reserved 2026</span>
+            </div>
         </div>
     </footer>
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+<style>
+    /* Global Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: #1f2937;
+        background-color: #ffffff;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    /* Industrial Header */
+    .industrial-header {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .industrial-header .navbar {
+        padding: 0.15rem 0;
+    }
+
+    .navbar-brand-industrial {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        text-decoration: none;
+        letter-spacing: 0.1em;
+        padding: 0.4rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .navbar-brand-industrial:hover {
+        color: #1e40af;
+        opacity: 0.9;
+    }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.75rem;
+        margin-right: 0.5rem;
+        background: #e5e7eb;
+        color: #374151;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .btn-industrial {
+        padding: 0.4rem 1.25rem;
+        margin: 0 0.25rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        min-width: 90px;
+        text-align: center;
+    }
+
+    .btn-login {
+        color: #1e40af;
+        background: #ffffff;
+        border-color: #ffffff;
+    }
+
+    .btn-login:hover {
+        color: #1e3a8a;
+        background: #f0f9ff;
+        opacity: 0.95;
+    }
+
+    .btn-register {
+        color: #ffffff;
+        background: #10b981;
+        border-color: #10b981;
+    }
+
+    .btn-register:hover {
+        color: #ffffff;
+        background: #059669;
+        opacity: 0.95;
+    }
+
+    .btn-signout {
+        color: #ffffff;
+        background: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-signout:hover {
+        color: #ffffff;
+        background: #dc2626;
+        opacity: 0.95;
+    }
+
+    .navbar-nav .nav-item {
+        display: flex;
+        align-items: center;
+    }
+
+    .navbar-toggler {
+        border-color: #d1d5db;
+    }
+
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(55, 65, 81, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    /* Modern Footer */
+    .modern-footer {
+        margin-top: auto;
+        padding: 0;
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .container {
+        display: flex;
+        flex-direction: column;
+        padding-top: 0.5rem;
+        padding-bottom: 0;
+    }
+
+    main {
+        flex: 0 1 auto;
+    }
+
+    .footer-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    .footer-text {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .footer-link {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .footer-link:hover {
+        color: #111827;
+        text-decoration: underline;
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .navbar-brand-modern {
+            font-size: 1.125rem;
+        }
+
+        .nav-link-modern {
+            padding: 0.75rem 1rem;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .footer-content {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
