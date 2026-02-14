@@ -1,0 +1,78 @@
+@model IEnumerable<ISDN.Models.Inventory>
+
+@{
+    ViewData["Title"] = "Inventory";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-warehouse"></i> Inventory</h2>
+            <p class="text-muted">View and manage product inventory</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Inventory ID</th>
+                                        <th>Product Name</th>
+                                        <th>Location</th>
+                                        <th>Available</th>
+                                        <th>Reserved</th>
+                                        <th>Reorder Level</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var inventory in Model)
+                                    {
+                                        <tr>
+                                            <td>@inventory.InventoryId</td>
+                                            <td>@inventory.Product?.ProductName</td>
+                                            <td>@inventory.Location</td>
+                                            <td>@inventory.QuantityAvailable</td>
+                                            <td>@inventory.QuantityReserved</td>
+                                            <td>@inventory.ReorderLevel</td>
+                                            <td>
+                                                @if (inventory.QuantityAvailable > inventory.ReorderLevel)
+                                                {
+                                                    <span class="badge bg-success">In Stock</span>
+                                                }
+                                                else if (inventory.QuantityAvailable > 0)
+                                                {
+                                                    <span class="badge bg-warning">Low Stock</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Out of Stock</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted py-5">No inventory found</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
