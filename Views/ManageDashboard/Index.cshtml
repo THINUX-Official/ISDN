@@ -1,0 +1,644 @@
+@model ISDN.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Executive Dashboard";
+}
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@ViewData["Title"] - Premium Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --dark: #0f172a;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 0;
+      color: var(--gray-900);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(138, 92, 246, 0.3), transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(99, 102, 241, 0.2), transparent 50%);
+      animation: gradient 15s ease infinite;
+      z-index: 0;
+    }
+
+    @@keyframes gradient {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2rem 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      animation: slideDown 0.6s ease-out;
+    }
+
+    @@keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .user-details h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .user-details p {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin-top: 2px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 0.85rem 1.8rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      position: relative;
+      overflow: hidden;
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+    @@keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .stat-icon svg {
+      color: white;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 0.75rem;
+    }
+
+    .stat-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .stat-change.positive {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      animation: fadeInUp 0.6s ease-out backwards;
+      animation-delay: 0.4s;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .badge {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge-info {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+    }
+
+    .alert-badge {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead th {
+      background: var(--gray-50);
+      color: var(--gray-700);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 1.2rem 1.5rem;
+      text-align: left;
+      border-bottom: 2px solid var(--gray-200);
+    }
+
+    tbody td {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--gray-100);
+      color: var(--gray-700);
+      font-size: 0.95rem;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: var(--gray-50);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-delivered,
+    .status-completed {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+
+    .status-pending {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+    }
+
+    .status-cancelled {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--gray-400);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    @@media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>Executive Dashboard</h1>
+        <p style="color: var(--gray-600); margin-top: 0.5rem; font-size: 0.95rem;">Real-time business analytics & insights</p>
+      </div>
+      <div class="header-meta">
+        <a class="btn-primary" asp-action="SalesReport">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Sales Report
+        </a>
+        <div class="user-info">
+          <div class="user-avatar">@Model.UserName.Substring(0, 1).ToUpper()</div>
+          <div class="user-details">
+            <h3>@Model.UserName</h3>
+            <p>@Model.UserRole</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+        </svg>
+      </div>
+      <div class="stat-label">Sales Today</div>
+      <div class="stat-value">LKR @Model.SalesToday.ToString("N2")</div>
+      <div class="stat-change positive">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M5 12l5-5m0 0l5 5m-5-5v12"/>
+        </svg>
+        @Model.GrowthToday.ToString("F1")% vs yesterday
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+      <div class="stat-label">Sales This Month</div>
+      <div class="stat-value">LKR @Model.SalesMonth.ToString("N2")</div>
+      <div class="stat-change positive">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M5 12l5-5m0 0l5 5m-5-5v12"/>
+        </svg>
+        @Model.GrowthMonth.ToString("F1")% vs last month
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="stat-label">Pending Orders</div>
+      <div class="stat-value">@Model.PendingOrdersCount</div>
+      <div class="stat-change" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+        Awaiting processing
+      </div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Orders by Status</h2>
+        <span class="badge badge-info">Last 30 days</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th style="text-align: right;">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (Model.OrdersByStatus.Any())
+          {
+            @foreach (var item in Model.OrdersByStatus)
+            {
+              <tr>
+                <td>
+                  <span class="status-badge status-@item.Status.ToLower()">
+                    @item.Status
+                  </span>
+                </td>
+                <td style="text-align: right; font-weight: 600;">@item.Count</td>
+              </tr>
+            }
+          }
+          else
+          {
+            <tr>
+              <td colspan="2" class="empty-state">No data available</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Top Products</h2>
+        <span class="badge badge-info">Best sellers</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th style="text-align: right;">Sold Qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (Model.TopProducts.Any())
+          {
+            @foreach (var product in Model.TopProducts)
+            {
+              <tr>
+                <td style="font-weight: 500;">@product.ProductName</td>
+                <td style="text-align: right; font-weight: 600; color: var(--primary);">@product.TotalQuantity</td>
+              </tr>
+            }
+          }
+          else
+          {
+            <tr>
+              <td colspan="2" class="empty-state">No data available</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Low Stock Alert</h2>
+        @if (Model.LowStockItems.Any())
+        {
+          <span class="alert-badge"></span>
+        }
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th style="text-align: center;">In Stock</th>
+            <th style="text-align: center;">Reorder Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (Model.LowStockItems.Any())
+          {
+            @foreach (var item in Model.LowStockItems)
+            {
+              <tr>
+                <td style="font-weight: 500;">@item.ProductName</td>
+                <td style="text-align: center;">
+                  <span style="color: var(--danger); font-weight: 700;">@item.QtyOnHand</span>
+                </td>
+                <td style="text-align: center; color: var(--gray-500);">@item.ReorderLevel</td>
+              </tr>
+            }
+          }
+          else
+          {
+            <tr>
+              <td colspan="3" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p>All stock levels are healthy</p>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Recent Orders</h2>
+        <span class="badge badge-info">Latest 10</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th style="text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (Model.RecentOrders.Any())
+          {
+            @foreach (var order in Model.RecentOrders)
+            {
+              <tr>
+                <td style="font-weight: 600; color: var(--primary);">#@order.OrderId</td>
+                <td style="font-size: 0.85rem; color: var(--gray-600);">@order.OrderDate.ToString("MMM dd, yyyy")</td>
+                <td>
+                  <span class="status-badge status-@order.Status.ToLower()">
+                    @order.Status
+                  </span>
+                </td>
+                <td style="text-align: right; font-weight: 600;">LKR @order.TotalAmount.ToString("N2")</td>
+              </tr>
+            }
+          }
+          else
+          {
+            <tr>
+              <td colspan="4" class="empty-state">No recent orders</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
