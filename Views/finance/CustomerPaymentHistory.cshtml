@@ -1,0 +1,56 @@
+﻿@using System.Linq
+@model IEnumerable<ISDN.Models.Payment>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Payment History";
+}
+
+<div class="container mt-5 mb-5">
+    <div style="border-radius: 15px; background: white; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+        <h2 class="text-primary mb-4">My Payment History</h2>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr style="background-color: #f8f9fa;">
+                        <th>Transaction Date</th>
+                        <th>Order Ref (TXN ID)</th> @*  *@
+                        <th>Payment Method</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var payment in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@payment.payment_date?.ToString("dd MMM yyyy, hh:mm tt")</td>
+                                <td>
+                                    @*  *@
+                                    <span class="fw-bold text-dark">@(payment.transaction_id ?? "N/A")</span>
+                                </td>
+                                <td>
+                                    @*  *@
+                                    <span class="text-capitalize">@payment.payment_method</span>
+                                </td>
+                                <td class="text-end fw-bold text-primary">Rs. @payment.amount.ToString("N2")</td>
+                                <td class="text-center">
+                                    @{
+                                        var status = payment.payment_status?.ToLower();
+                                        var badgeClass = (status == "paid" || status == "successful") ? "bg-success" : "bg-warning";
+                                    }
+                                    <span class="badge @badgeClass text-white" style="padding: 5px 12px; border-radius: 20px;">
+                                        @payment.payment_status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,29 +1,37 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ISDN.Models;
+using ISDN.Interfaces;
+using ISDN.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Controller and Views 
 builder.Services.AddControllersWithViews();
+
+// 2. Database  connection (MySQL)
+var connectionString = "server=localhost;port=3306;database=isdn_distribution_db;user=root;password=1998@Admin";
+builder.Services.AddDbContext<AppDbContext>(options => options.UseMySQL(connectionString));
+
+// 3. Repository   (Dependency Injection)
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middleware  
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
+//Payment Controller  Index  Open 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
+    pattern: "{controller=Payment}/{action=Index}/{id?}");
 
 app.Run();

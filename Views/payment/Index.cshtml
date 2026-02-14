@@ -1,0 +1,181 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<style>
+    .payment-box {
+        border: 1.5px dashed #1a237e;
+        border-radius: 12px;
+        background: #f8f9ff;
+        padding: 20px;
+    }
+
+    .method-card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+        margin-bottom: 10px;
+    }
+
+        .method-card:hover {
+            border-color: #1a237e;
+            background: #f0f2ff;
+        }
+    /* Error Message Style */
+    .error-display {
+        color: #d32f2f;
+        background: #ffebee;
+        border-left: 5px solid #d32f2f;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        display: none;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <form action="/Payment/ProcessPayment" method="post" id="checkoutForm" onsubmit="return validateForm()">
+        <input type="hidden" name="order_id" value="@ViewBag.OrderId" />
+        <input type="hidden" name="amount" value="@ViewBag.TotalPrice" />
+
+        <div class="row">
+            <div class="col-md-7 border p-4 shadow-sm bg-white" style="border-radius: 15px;">
+                <h4 class="mb-4 text-primary font-weight-bold border-bottom pb-2">BILLING DETAILS</h4>
+
+                @* Error show *@
+                <div id="error-msg" class="error-display"></div>
+
+                <div class="row mb-3">
+                    <div class="col-6"><label>First name *</label><input type="text" name="firstName" class="form-control" value="@ViewBag.FirstName" readonly required /></div>
+                    <div class="col-6"><label>Last name *</label><input type="text" name="lastName" class="form-control" value="@ViewBag.LastName" readonly required /></div>
+                </div>
+                <div class="mb-3"><label>Street address *</label><input type="text" name="address" class="form-control" value="@ViewBag.Address" readonly required /></div>
+                <div class="row mb-4">
+                    <div class="col-6"><label>Zip code *</label><input type="text" name="zip_code" class="form-control" value="@ViewBag.ZipCode" readonly required /></div>
+                    <div class="col-6"><label>Phone *</label><input type="text" name="phone_num" class="form-control" value="@ViewBag.Phone" readonly required /></div>
+                </div>
+
+                <h4 class="mb-3 text-primary font-weight-bold text-uppercase">Payment Method</h4>
+                <div class="mb-4">
+                    <div class="method-card">
+                        <input type="radio" name="payment_method" value="Card" id="payCard" checked onclick="toggleSection('card')">
+                        <label for="payCard" class="ml-2 font-weight-bold">Credit / Debit Card (Visa, Master)</label>
+                    </div>
+                    <div class="method-card">
+                        <input type="radio" name="payment_method" value="Bank Transfer" id="payBank" onclick="toggleSection('bank')">
+                        <label for="payBank" class="ml-2 font-weight-bold">Direct Bank Transfer</label>
+                    </div>
+                </div>
+
+                @* Card Details *@
+                <div id="cardSection" class="payment-box">
+                    <h5 class="text-primary mb-3 font-weight-bold">CARD DETAILS</h5>
+                    <div class="mb-3">
+                        <label>Bank Name *</label>
+                        @* onkeypress *@
+                        <input type="text" name="card_name" id="card_name" class="form-control" placeholder="BOC / Sampath" onkeypress="return /[a-zA-Z\s]/.test(event.key)" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Card Number *</label>
+                        @* text input *@
+                        <input type="text" name="card_number" id="card_num" class="form-control" maxlength="16" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><label>Month (01-12) *</label><input type="number" name="exp_month" id="exp_month" class="form-control" min="1" max="12" /></div>
+                        <div class="col-4"><label>Year (YY) *</label><input type="text" name="exp_year" id="exp_year" class="form-control" maxlength="2" oninput="this.value = this.value.replace(/[^0-9]/g, '')" /></div>
+                        <div class="col-4"><label>CVC *</label><input type="text" name="cvc" id="cvc" class="form-control" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')" /></div>
+                    </div>
+                </div>
+
+                <div id="bankSection" class="payment-box" style="display:none; background: #fffdf0; border-color: #fbc02d;">
+                    <h5 class="text-warning mb-3 font-weight-bold">OUR BANK DETAILS</h5>
+                    <p class="mb-1"><strong>Bank:</strong> Bank of Ceylon (BOC)</p>
+                    <p class="mb-1"><strong>Account Name:</strong> ISDN Distribution Ltd</p>
+                    <p class="mb-3"><strong>Account Number:</strong> 8899001122</p>
+                    <div class="mt-3">
+                        <label>Slip Reference Number / Transaction ID *</label>
+                        <input type="text" name="bank_ref" id="bank_ref" class="form-control" placeholder="Enter Ref No">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card p-4 shadow-sm border-0" style="border-radius: 15px;">
+                    <h4 class="text-center text-primary font-weight-bold text-uppercase">Your Order</h4>
+                    <hr />
+                    <div class="d-flex justify-content-between py-2">
+                        <span>@ViewBag.ProductName × 1</span>
+                        <span class="font-weight-bold">Rs. @ViewBag.TotalPrice</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between h3 text-danger font-weight-bold">
+                        <span>Total</span>
+                        <span>Rs. @ViewBag.TotalPrice</span>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-block mt-4 p-3 font-weight-bold shadow text-uppercase">Place Order / Complete</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<script>
+    function toggleSection(method) {
+        document.getElementById('error-msg').style.display = 'none';
+        if (method === 'card') {
+            document.getElementById('cardSection').style.display = 'block';
+            document.getElementById('bankSection').style.display = 'none';
+        } else {
+            document.getElementById('cardSection').style.display = 'none';
+            document.getElementById('bankSection').style.display = 'block';
+        }
+    }
+
+    function validateForm() {
+        var method = document.querySelector('input[name="payment_method"]:checked').value;
+        var errorDisplay = document.getElementById('error-msg');
+
+        if (method === 'Card') {
+            var cardName = document.getElementById('card_name').value;
+            var cardNum = document.getElementById('card_num').value;
+            var expMonth = document.getElementById('exp_month').value;
+            var expYear = document.getElementById('exp_year').value;
+            var cvc = document.getElementById('cvc').value;
+
+            // bank card number 
+            if (/\d/.test(cardName)) {
+                errorDisplay.innerHTML = "⚠️ Bank Name should not contain numbers. Please enter text only.";
+                errorDisplay.style.display = 'block';
+                window.scrollTo(0, 0);
+                return false;
+            }
+
+            if (cardName.trim() === "" || cardNum.trim() === "" || expMonth === "" || expYear.trim() === "" || cvc.trim() === "") {
+                errorDisplay.innerHTML = "⚠️ Please fill all Card Details before placing the order.";
+                errorDisplay.style.display = 'block';
+                window.scrollTo(0, 0);
+                return false;
+            }
+
+            if (cardNum.length !== 16) {
+                errorDisplay.innerHTML = "⚠️ Card Number must be exactly 16 digits.";
+                errorDisplay.style.display = 'block';
+                window.scrollTo(0, 0);
+                return false;
+            }
+        } else {
+            var bankRef = document.getElementById('bank_ref').value;
+            if (bankRef.trim() === "") {
+                errorDisplay.innerHTML = "⚠️ Please enter the Bank Slip Reference Number.";
+                errorDisplay.style.display = 'block';
+                window.scrollTo(0, 0);
+                return false;
+            }
+        }
+        return true;
+    }
+</script>

@@ -1,0 +1,92 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<style>
+    :root {
+        --navy: #1a237e;
+    }
+
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+    }
+
+    .invoice-card {
+        background: white;
+        border-radius: 15px;
+        border: 1px solid #ddd;
+        padding: 35px;
+        margin-top: 50px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .btn-custom {
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        transition: 0.3s;
+        display: inline-block;
+    }
+
+    .btn-track {
+        background-color: #212529;
+        color: white;
+        border: none;
+        min-width: 200px;
+    }
+
+    
+    .btn-email {
+        background-color: transparent;
+        color: #17a2b8;
+        border: 2px solid #17a2b8;
+        margin-left: 8px;
+    }
+</style>
+
+<div class="container mb-5">
+    <div class="invoice-card mx-auto" style="max-width: 850px;">
+        <div class="row">
+            <div class="col-md-6 border-right">
+                <h3 class="text-success font-weight-bold mb-3">Payment Successful!</h3>
+                <p class="text-muted small">Thank you for your purchase!</p>
+
+                <h5 class="mt-4 border-bottom pb-2" style="color: var(--navy); font-weight: 700;">BILLING ADDRESS</h5>
+                <div class="billing-details mb-4" style="line-height: 2;">
+                    <p class="mb-1"><strong>Name:</strong> @ViewBag.CustomerName</p>
+                    <p class="mb-1"><strong>Address:</strong> @ViewBag.Address</p>
+                    <p class="mb-1"><strong>Contact:</strong> @ViewBag.Phone</p>
+                    <p class="mb-1"><strong>Date:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</p>
+                </div>
+
+                <div class="no-print d-flex mt-4">
+                    <button onclick="window.print()" class="btn btn-primary btn-custom">PRINT INVOICE</button>
+                    @* Send to Email  *@
+                    <button class="btn btn-email btn-custom">SEND TO EMAIL</button>
+                </div>
+            </div>
+
+            <div class="col-md-6 pl-md-5 text-center d-flex flex-column justify-content-between">
+                <div>
+                    <h4 class="font-weight-bold border-bottom pb-2" style="color: var(--navy);">YOUR ORDER</h4>
+                    <p class="text-muted small">Order ID: #@ViewBag.OrderId</p>
+
+                    <div class="bg-light p-4 rounded mb-4 mt-3 border shadow-sm">
+                        <h5 class="text-primary font-weight-bold">@ViewBag.ProductName</h5>
+                        <p class="small text-muted m-0">Quantity: 01</p>
+                        <hr />
+                        <h4 class="m-0">Total: <span class="text-danger font-weight-bold">Rs. @ViewBag.TotalPrice</span></h4>
+                    </div>
+                </div>
+                <div class="no-print d-flex flex-column align-items-center mt-3">
+                    <a href="/Delivery/Track" class="btn btn-track btn-custom mb-4 shadow text-uppercase">Track Order</a>
+                    <a href="/" class="text-muted small font-weight-bold">Close</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,124 @@
+﻿@{
+    Layout = "_Layout";
+}
+
+<style>
+    .revenue-card {
+        border-radius: 15px;
+        transition: transform 0.3s;
+        border: none;
+    }
+
+        .revenue-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        @* Logged in user's RDC / title  *@
+        <h2 class="text-primary font-weight-bold text-uppercase">
+            Finance Dashboard - @(ViewBag.UserRdcName ?? "Center")
+        </h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card revenue-card shadow-sm text-white" style="background: linear-gradient(45deg, #1a237e, #3f51b5);">
+                <div class="card-body p-4 text-center">
+                    <h6>TOTAL NET REVENUE</h6>
+                    <h2 class="font-weight-bold mt-2">Rs. @ViewBag.FinalRevenue</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card revenue-card shadow-sm text-white" style="background: linear-gradient(45deg, #004d40, #009688);">
+                <div class="card-body p-4 text-center">
+                    <h6>TOTAL ORDERS</h6>
+                    <h2 class="font-weight-bold mt-2">@ViewBag.TotalOrders</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card revenue-card shadow-sm text-white" style="background: linear-gradient(45deg, #b71c1c, #f44336);">
+                <div class="card-body p-4 text-center">
+                    <h6>RETURN DEDUCTIONS</h6>
+                    <h2 class="font-weight-bold mt-2">Rs. @ViewBag.TotalReturns</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <div class="chart-container shadow-sm border">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="font-weight-bold text-primary">Revenue Performance: @ViewBag.UserRdcName</h5>
+                </div>
+
+                <div style="height: 350px;">
+                    <canvas id="revenueBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('revenueBarChart').getContext('2d');
+
+    // Controller data 
+    var rdcProfit = @(ViewBag.RdcProfit ?? 0);
+    var rdcName = '@(ViewBag.UserRdcName ?? "Loading...")';
+
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [rdcName], // Log 
+            datasets: [{
+                label: 'Net Revenue (Rs.)',
+                
+                data: [rdcProfit < 0 ? 0 : rdcProfit],
+                backgroundColor: '#1a237e',
+                borderRadius: 10,
+                barThickness: 80
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        
+                        callback: function(value) {
+                            return 'Rs.' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Revenue: Rs.' + rdcProfit.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
