@@ -1,0 +1,97 @@
+@model List<ISDN.Models.OrderItem>
+
+@{
+    ViewData["Title"] = "Shopping Cart";
+    decimal total = Model.Sum(i => i.Subtotal);
+}
+
+<div class="container mt-5">
+    <h1 class="mb-4">Shopping Cart</h1>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            Your cart is empty. <a asp-controller="Products" asp-action="Index" class="alert-link">Continue shopping</a>.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (item.Product != null)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.Product.ImageRelativePath))
+                                        {
+                                            <img src="@item.Product.ImageRelativePath" alt="@item.Product.ProductName"
+                                                class="me-3 rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                        }
+                                        <span>@item.Product.ProductName</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>Product ID: @item.ProductId</span>
+                                }
+                            </td>
+                            <td>@item.Product?.UnitPrice.ToString("C")</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.Subtotal.ToString("C")</td>
+                            <td>
+                                <a asp-action="RemoveFromCart" asp-route-productId="@item.ProductId"
+                                    class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Remove
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-end fw-bold fs-5">Total:</td>
+                        <td class="fw-bold fs-5 text-primary">@total.ToString("C")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a asp-controller="Products" asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Continue Shopping
+            </a>
+            <a asp-action="Checkout" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle"></i> Checkout
+            </a>
+        </div>
+    }
+</div>

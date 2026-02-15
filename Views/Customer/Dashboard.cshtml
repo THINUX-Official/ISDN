@@ -1,0 +1,83 @@
+@{
+    ViewData["Title"] = "Customer Dashboard";
+}
+
+<div class="container fade-in">
+    <!-- Welcome Banner -->
+    <div class="card glass-panel mb-5 text-center py-5">
+        <h1 class="display-4 fw-bold mb-3"><i class="bi bi-person-circle me-2"></i>Customer Dashboard</h1>
+        <p class="lead mb-4">Welcome to your personal dashboard</p>
+        <hr class="my-4 w-50 mx-auto" />
+        <p class="text-muted">As a customer, you can browse products, place orders, and manage your account. This
+            dashboard provides a centralized location to monitor your activity.</p>
+        <p class="fw-bold mt-3">Logged in as: <span class="text-primary">@ViewBag.UserName</span></p>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="row g-4 justify-content-center">
+        <!-- Browse Products -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card glass-panel h-100 text-center p-4 hover-scale">
+                <div class="card-body">
+                    <div class="display-4 text-primary mb-3">
+                        <i class="bi bi-bag-check-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Browse Products</h5>
+                    <p class="card-text text-muted small mb-4">Explore our full product catalog.</p>
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-primary w-100 rounded-pill">View
+                        Products</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Orders -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card glass-panel h-100 text-center p-4 hover-scale">
+                <div class="card-body">
+                    <div class="display-4 text-success mb-3">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">My Orders</h5>
+                    <p class="card-text text-muted small mb-4">Track your current and past orders.</p>
+                    <a asp-action="Orders" class="btn btn-success w-100 rounded-pill">View Orders</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card glass-panel h-100 text-center p-4 hover-scale">
+                <div class="card-body">
+                    <div class="display-4 text-warning mb-3">
+                        <i class="bi bi-credit-card-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Payment History</h5>
+                    <p class="card-text text-muted small mb-4">View transactions and invoices.</p>
+                    <a asp-action="Payments" class="btn btn-warning w-100 rounded-pill text-white">View Payments</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Settings -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card glass-panel h-100 text-center p-4 hover-scale">
+                <div class="card-body">
+                    <div class="display-4 text-info mb-3">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Profile Settings</h5>
+                    <p class="card-text text-muted small mb-4">Manage your personal information.</p>
+                    <a asp-action="Profile" class="btn btn-info w-100 rounded-pill text-white">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="alert alert-success mt-5 glass-panel border-0 d-flex align-items-center" role="alert">
+        <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+        <div>
+            <strong>Welcome!</strong> Thank you for being our valued customer. Enjoy exclusive discounts and offers!
+        </div>
+    </div>
+</div>

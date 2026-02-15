@@ -1,0 +1,69 @@
+@model ISDN.Models.Product
+
+@{
+    ViewData["Title"] = "Delete Product";
+}
+
+<div class="container mt-5">
+    <h1>Delete Product</h1>
+    <h3 class="text-danger">Are you sure you want to delete this product?</h3>
+    <hr />
+    <div class="row module-border p-4 bg-light rounded shadow-sm">
+        <div class="col-md-8 mx-auto">
+            <dl class="row">
+                <dt class="col-sm-3 fw-bold">
+                    @Html.DisplayNameFor(model => model.ProductName)
+                </dt>
+                <dd class="col-sm-9">
+                    @Html.DisplayFor(model => model.ProductName)
+                </dd>
+                <dt class="col-sm-3 fw-bold">
+                    @Html.DisplayNameFor(model => model.Description)
+                </dt>
+                <dd class="col-sm-9">
+                    @Html.DisplayFor(model => model.Description)
+                </dd>
+                <dt class="col-sm-3 fw-bold">
+                    @Html.DisplayNameFor(model => model.UnitPrice)
+                </dt>
+                <dd class="col-sm-9">
+                    @Html.DisplayFor(model => model.UnitPrice)
+                </dd>
+                <dt class="col-sm-3 fw-bold">
+                    @Html.DisplayNameFor(model => model.StockQuantity)
+                </dt>
+                <dd class="col-sm-9">
+                    @Html.DisplayFor(model => model.StockQuantity)
+                </dd>
+                <dt class="col-sm-3 fw-bold">
+                    @Html.DisplayNameFor(model => model.Category)
+                </dt>
+                <dd class="col-sm-9">
+                    @Html.DisplayFor(model => model.Category)
+                </dd>
+                <dt class="col-sm-3 fw-bold">
+                    Product Image
+                </dt>
+                <dd class="col-sm-9">
+                    @if (!string.IsNullOrEmpty(Model.ImageRelativePath))
+                    {
+                        <img src="@Model.ImageRelativePath" alt="@Model.ProductName" class="img-thumbnail"
+                            style="max-height: 150px;" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">No Image</span>
+                    }
+                </dd>
+            </dl>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="ProductId" />
+                <div class="form-group d-flex justify-content-between mt-4">
+                    <a asp-action="Manage" class="btn btn-secondary">Back to List</a>
+                    <button type="submit" class="btn btn-danger px-4">Delete Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

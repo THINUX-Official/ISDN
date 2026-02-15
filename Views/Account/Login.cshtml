@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card glass-panel p-5" style="max-width: 450px; width: 100%;">
+        <div class="text-center mb-4">
+            <h1 class="fw-bold text-primary">ISDN</h1>
+            <p class="text-muted">Welcome back! Please login to continue.</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger text-center mb-4">
+                @ViewBag.Error
+            </div>
+        }
+
+        <form asp-action="Login" method="post">
+            <div class="mb-3">
+                <label for="email" class="form-label fw-bold">Email Address</label>
+                <input type="email" class="form-control rounded-pill p-2 px-3" id="email" name="email"
+                    placeholder="name@example.com" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="form-label fw-bold">Password</label>
+                <input type="password" class="form-control rounded-pill p-2 px-3" id="password" name="password"
+                    placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm">Login</button>
+        </form>
+
+        <div class="text-center mt-4 text-muted small">
+            <p>Don't have an account? <a href="#" class="text-decoration-none">Contact Admin</a></p>
+            <hr />
+            <p class="mb-1"><strong>Demo Credentials:</strong></p>
+            <p class="mb-0">Admin: admin@isdn.lk / admin123</p>
+            <p>Customer: customer@test.com / cust123</p>
+        </div>
+    </div>
+</div>
