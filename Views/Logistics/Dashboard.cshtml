@@ -6,7 +6,7 @@
     <div class="row mb-4">
         <div class="col">
             <h2><i class="fas fa-truck"></i> Logistics Dashboard</h2>
-            <p class="text-muted">Schedule deliveries, track shipments, and manage logistics operations</p>
+            <p class="text-muted">View all Deliveries, Shedule Deliveries, and Track Shipments</p>
         </div>
     </div>
 
@@ -15,26 +15,8 @@
             <div class="card text-center border-primary">
                 <div class="card-body">
                     <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
-                    <h3>25</h3>
+                    <h3>2</h3>
                     <p class="text-muted">Active Deliveries</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-success">
-                <div class="card-body">
-                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                    <h3>150</h3>
-                    <p class="text-muted">Completed Today</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-warning">
-                <div class="card-body">
-                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
-                    <h3>8</h3>
-                    <p class="text-muted">Pending Schedule</p>
                 </div>
             </div>
         </div>
@@ -42,8 +24,26 @@
             <div class="card text-center border-info">
                 <div class="card-body">
                     <i class="fas fa-users fa-3x text-info mb-3"></i>
-                    <h3>12</h3>
+                    <h3>6</h3>
                     <p class="text-muted">Active Drivers</p>
+                </div>
+            </div>
+        </div>      
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                    <h3>2</h3>
+                    <p class="text-muted">Pending Schedule</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h3>1</h3>
+                    <p class="text-muted">Completed Today</p>
                 </div>
             </div>
         </div>
@@ -56,13 +56,13 @@
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a asp-action="Deliveries" class="btn btn-outline-primary mb-2">
+                    <a asp-action="Deliveries" class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-truck"></i> View All Deliveries
                     </a>
-                    <a asp-action="Schedule" class="btn btn-outline-success mb-2">
+                    <a asp-action="Schedule" class="btn btn-outline-success w-100 mb-2">
                         <i class="fas fa-calendar-plus"></i> Schedule Delivery
                     </a>
-                    <a href="#" class="btn btn-outline-info mb-2">
+                    <a href="#" class="btn btn-outline-info w-100 mb-2">
                         <i class="fas fa-map-marked-alt"></i> Track Shipments
                     </a>
                 </div>

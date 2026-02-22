@@ -6,7 +6,7 @@
     <div class="row mb-4">
         <div class="col">
             <h2><i class="fas fa-user-tie"></i> Sales Representative Dashboard</h2>
-            <p class="text-muted">Create orders on behalf of customers and track sales performance</p>
+            <p class="text-muted">Create new Orders, View all Orders and View Customers</p>
         </div>
     </div>
 
@@ -15,7 +15,8 @@
             <div class="card text-center border-primary">
                 <div class="card-body">
                     <i class="fas fa-shopping-cart fa-3x text-primary mb-3"></i>
-                    <h3>@ViewBag.TotalOrders</h3>
+                    @* <h3>@ViewBag.TotalOrders</h3> *@
+                    <h3>3</h3>
                     <p class="text-muted">Total Orders</p>
                 </div>
             </div>
@@ -33,7 +34,7 @@
             <div class="card text-center border-info">
                 <div class="card-body">
                     <i class="fas fa-dollar-sign fa-3x text-info mb-3"></i>
-                    <h3>$0</h3>
+                    <h3>0</h3>
                     <p class="text-muted">Sales Today</p>
                 </div>
             </div>
@@ -47,13 +48,13 @@
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a href="#" class="btn btn-outline-primary mb-2">
+                    <a href="#" class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-plus-circle"></i> Create New Order
                     </a>
-                    <a asp-action="Orders" class="btn btn-outline-success mb-2">
+                    <a asp-action="Orders" class="btn btn-outline-success w-100 mb-2">
                         <i class="fas fa-list"></i> View All Orders
                     </a>
-                    <a href="#" class="btn btn-outline-info mb-2">
+                    <a href="#" class="btn btn-outline-info w-100 mb-2">
                         <i class="fas fa-users"></i> View Customers
                     </a>
                 </div>
