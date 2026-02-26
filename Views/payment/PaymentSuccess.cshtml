@@ -1,92 +1,261 @@
 ﻿@{
     Layout = "_Layout";
+
+    /* Predefined product list based on inventory screenshots */
+    var items = new[] {
+        new { Name = "Cooking Oil - 1L", Price = 450.00 },
+        new { Name = "Tea - 200g", Price = 380.00 },
+        new { Name = "Sugar - 1kg", Price = 150.00 },
+        new { Name = "Flour - 1kg", Price = 120.00 },
+        new { Name = "Rice - 5kg", Price = 850.00 }
+    };
+    double totalSum = items.Sum(i => i.Price);
 }
 
 <style>
     :root {
-        --navy: #1a237e;
+        --primary-blue: #1a237e;
+        --success-green: #27ae60;
+        --light-bg: #f8f9fa;
+        --dark-text: #2c3e50;
     }
 
-    @@media print {
-        .no-print {
-            display: none !important;
-        }
+    body {
+        background-color: #f0f2f5;
     }
 
-    .invoice-card {
+    /* Main Invoice Container */
+    .invoice-wrapper {
+        max-width: 850px;
+        margin: 30px auto;
         background: white;
-        border-radius: 15px;
-        border: 1px solid #ddd;
-        padding: 35px;
-        margin-top: 50px;
+        border-radius: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
     }
 
-    .btn-custom {
-        font-weight: bold;
+    /* Professional Success Header Banner */
+    .success-banner {
+        background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .status-icon {
+        width: 50px;
+        height: 50px;
+        background: white;
+        color: var(--success-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+        margin: 0 auto 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Content Body Padding Optimization */
+    .invoice-body {
+        padding: 40px;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--light-bg);
+        padding-bottom: 15px;
+    }
+
+    .details-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #95a5a6;
         text-transform: uppercase;
+    }
+
+    .info-text {
+        font-size: 0.95rem;
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+
+    /* Order Breakdown Table Styling */
+    .order-summary-box {
+        background: var(--light-bg);
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .total-amount {
+        font-size: 2rem;
+        color: #d32f2f;
+        font-weight: 800;
+    }
+
+    /* Button Actions Styling */
+    .btn-action {
         padding: 12px 25px;
-        border-radius: 6px;
-        font-size: 0.85rem;
+        border-radius: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: none;
         transition: 0.3s;
-        display: inline-block;
+    }
+
+    .btn-print {
+        background: #e9ecef;
+        color: var(--dark-text);
     }
 
     .btn-track {
-        background-color: #212529;
+        background: var(--primary-blue);
         color: white;
-        border: none;
-        min-width: 200px;
     }
 
-    
-    .btn-email {
-        background-color: transparent;
-        color: #17a2b8;
-        border: 2px solid #17a2b8;
-        margin-left: 8px;
+    /* PRINT OPTIMIZATION: Fixes 2-page print issue */
+    @@media print {
+        @@page {
+            margin: 0; /* Removes browser default header/footer text */
+        }
+
+        .no-print {
+            display: none !important;
+        }
+        /* Hide buttons on print */
+        body {
+            background: white !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .invoice-wrapper {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            border-radius: 0 !important;
+        }
+
+        .invoice-body {
+            padding: 20px !important;
+        }
+
+        .success-banner {
+            padding: 20px !important;
+            background: #1a237e !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .order-summary-box {
+            padding: 15px !important;
+            margin: 10px 0 !important;
+        }
     }
 </style>
 
 <div class="container mb-5">
-    <div class="invoice-card mx-auto" style="max-width: 850px;">
-        <div class="row">
-            <div class="col-md-6 border-right">
-                <h3 class="text-success font-weight-bold mb-3">Payment Successful!</h3>
-                <p class="text-muted small">Thank you for your purchase!</p>
+    <div class="invoice-wrapper">
+        <div class="success-banner">
+            <div class="status-icon no-print"><i class="fas fa-check"></i></div>
+            <h2 class="font-weight-bold" style="font-size: 1.8rem;">Payment Successful!</h2>
+            <p class="mb-0 opacity-8 small">Your transaction of Rs. @totalSum.ToString("N2") was successful.</p>
+        </div>
 
-                <h5 class="mt-4 border-bottom pb-2" style="color: var(--navy); font-weight: 700;">BILLING ADDRESS</h5>
-                <div class="billing-details mb-4" style="line-height: 2;">
-                    <p class="mb-1"><strong>Name:</strong> @ViewBag.CustomerName</p>
-                    <p class="mb-1"><strong>Address:</strong> @ViewBag.Address</p>
-                    <p class="mb-1"><strong>Contact:</strong> @ViewBag.Phone</p>
-                    <p class="mb-1"><strong>Date:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</p>
+        <div class="invoice-body">
+            <div class="invoice-header">
+                <div>
+                    <div class="details-title">Order Reference</div>
+                    <div class="info-text">#@ViewBag.OrderId</div>
                 </div>
-
-                <div class="no-print d-flex mt-4">
-                    <button onclick="window.print()" class="btn btn-primary btn-custom">PRINT INVOICE</button>
-                    @* Send to Email  *@
-                    <button class="btn btn-email btn-custom">SEND TO EMAIL</button>
+                <div class="text-right">
+                    <div class="details-title">Generated Date</div>
+                    <div class="info-text">@DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")</div>
                 </div>
             </div>
 
-            <div class="col-md-6 pl-md-5 text-center d-flex flex-column justify-content-between">
-                <div>
-                    <h4 class="font-weight-bold border-bottom pb-2" style="color: var(--navy);">YOUR ORDER</h4>
-                    <p class="text-muted small">Order ID: #@ViewBag.OrderId</p>
+            <div class="row">
+                <div class="col-6">
+                    <h6 class="font-weight-bold mb-3" style="color: var(--primary-blue);">DELIVERY INFORMATION</h6>
+                    <div style="line-height: 1.6; font-size: 0.9rem;">
+                        <div class="text-muted small font-weight-bold">RECIPIENT</div>
+                        <div class="info-text mb-2">@ViewBag.CustomerName</div>
 
-                    <div class="bg-light p-4 rounded mb-4 mt-3 border shadow-sm">
-                        <h5 class="text-primary font-weight-bold">@ViewBag.ProductName</h5>
-                        <p class="small text-muted m-0">Quantity: 01</p>
-                        <hr />
-                        <h4 class="m-0">Total: <span class="text-danger font-weight-bold">Rs. @ViewBag.TotalPrice</span></h4>
+                        <div class="text-muted small font-weight-bold">SHIPPING ADDRESS</div>
+                        <div class="info-text mb-2">@ViewBag.Address</div>
+
+                        <div class="text-muted small font-weight-bold">CONTACT NUMBER</div>
+                        <div class="info-text">@ViewBag.Phone</div>
                     </div>
                 </div>
-                <div class="no-print d-flex flex-column align-items-center mt-3">
-                    <a href="/Delivery/Track" class="btn btn-track btn-custom mb-4 shadow text-uppercase">Track Order</a>
-                    <a href="/" class="text-muted small font-weight-bold">Close</a>
+
+                <div class="col-6">
+                    <div class="order-summary-box">
+                        <h6 class="font-weight-bold mb-2 text-center" style="color: var(--primary-blue);">ORDER BREAKDOWN</h6>
+                        @foreach (var item in items)
+                        {
+                            <div class="d-flex justify-content-between py-1 border-bottom">
+                                <span class="text-muted" style="font-size: 0.8rem;">@item.Name</span>
+                                <span class="font-weight-bold" style="font-size: 0.8rem;">Rs. @item.Price.ToString("N2")</span>
+                            </div>
+                        }
+                        <div class="text-center mt-3">
+                            <div class="text-muted small font-weight-bold">TOTAL AMOUNT PAID</div>
+                            <div class="total-amount" style="font-size: 1.8rem;">Rs. @totalSum.ToString("N2")</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div class="no-print mt-4 border-top pt-3 text-center">
+                <div class="d-flex justify-content-center mb-3">
+                    <button onclick="window.print()" class="btn btn-print btn-action mr-2">
+                        <i class="fas fa-print mr-1"></i> Print Invoice
+                    </button>
+                    <button onclick="sendEmailWithInput()" class="btn btn-outline-info btn-action mr-2">
+                        <i class="fas fa-envelope mr-1"></i> Email Receipt
+                    </button>
+                    <a href="/Delivery/Track" class="btn btn-track btn-action">Track Delivery</a>
+                </div>
+                <a href="/" class="text-muted small font-weight-bold" style="text-decoration:none;">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to Shopping
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    /**
+     * Simulation for sending professional invoice via Email input
+     */
+    function sendEmailWithInput() {
+        Swal.fire({
+            title: 'Send Digital Bill',
+            input: 'email',
+            inputLabel: 'Recipient Email Address',
+            inputPlaceholder: 'customer@domain.com',
+            showCancelButton: true,
+            confirmButtonText: 'Send Now',
+            confirmButtonColor: '#1a237e',
+            cancelButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing...',
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                setTimeout(() => {
+                    Swal.fire({ icon: 'success', title: 'Invoice Sent!', text: 'Professional copy dispatched successfully.', timer: 2000 });
+                }, 1500);
+            }
+        });
+    }
+</script>

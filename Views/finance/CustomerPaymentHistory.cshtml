@@ -6,19 +6,184 @@
     ViewData["Title"] = "Payment History";
 }
 
-<div class="container mt-5 mb-5">
-    <div style="border-radius: 15px; background: white; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
-        <h2 class="text-primary mb-4">My Payment History</h2>
+<style>
+    /* Professional Color Palette */
+    :root {
+        --primary-blue: #1a237e;
+        --accent-red: #d32f2f;
+        --success-green: #2e7d32;
+        --light-bg: #f8f9fc;
+        --card-shadow: 0 10px 30px rgba(26, 35, 126, 0.05);
+    }
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
+    body {
+        background-color: var(--light-bg);
+    }
+
+    /* Modern Card Styling */
+    .history-card {
+        border-radius: 25px;
+        background: white;
+        padding: 40px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid #eef2f7;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #f1f4f8;
+        padding-bottom: 25px;
+    }
+
+    .title-text {
+        color: var(--primary-blue);
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    /* Table Spacing Fix */
+    .table {
+        border-collapse: separate !important;
+        border-spacing: 0 15px !important;
+        background-color: transparent;
+    }
+
+        .table thead th {
+            background-color: transparent;
+            border: none;
+            color: #95a5a6;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+            padding: 10px 20px;
+        }
+
+        .table tbody tr {
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+        }
+
+            .table tbody tr:hover {
+                transform: scale(1.01);
+                box-shadow: 0 8px 20px rgba(26, 35, 126, 0.1);
+                background-color: #ffffff;
+            }
+
+        .table td {
+            padding: 22px 20px;
+            border: none;
+            vertical-align: middle;
+        }
+
+            .table td:first-child {
+                border-top-left-radius: 15px;
+                border-bottom-left-radius: 15px;
+                border-left: 4px solid transparent;
+                transition: border-color 0.3s;
+            }
+
+        .table tbody tr:hover td:first-child {
+            border-left-color: var(--primary-blue);
+        }
+
+        .table td:last-child {
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+    /* Custom Elements */
+    .txn-id {
+        font-family: 'Segoe UI', Roboto, sans-serif;
+        color: #546e7a;
+        font-weight: 600;
+        background: #f1f5f9;
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+
+    .amount-text {
+        color: #1a237e;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    .status-pill {
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-print-outline {
+        border: 2px solid var(--primary-blue);
+        color: var(--primary-blue);
+        background: transparent;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: 10px 25px;
+        transition: 0.3s;
+    }
+
+        .btn-print-outline:hover {
+            background: var(--primary-blue);
+            color: white;
+            box-shadow: 0 5px 15px rgba(26, 35, 126, 0.2);
+        }
+
+    /* මෙන්න මෙතන තමයි Error එක ආවේ - මම ඒක @@ පාවිච්චි කරලා හැදුවා */
+    @@media print {
+        .no-print, .btn-print-outline, .navbar, footer {
+            display: none !important;
+        }
+
+        .history-card {
+            box-shadow: none;
+            border: none;
+            padding: 0;
+        }
+
+        .table tbody tr {
+            border: 1px solid #eee;
+            box-shadow: none;
+        }
+
+        body {
+            background: white;
+        }
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="history-card">
+        <div class="page-header">
+            <div>
+                <h2 class="title-text text-uppercase">My Payment History</h2>
+                <p class="text-muted small mb-0">Track and manage your previous transactions securely.</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-print-outline no-print">
+                <i class="fas fa-print mr-2"></i> PRINT REPORT
+            </button>
+        </div>
+
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="table align-middle">
                 <thead>
-                    <tr style="background-color: #f8f9fa;">
-                        <th>Transaction Date</th>
-                        <th>Order Ref (TXN ID)</th> @*  *@
-                        <th>Payment Method</th>
-                        <th class="text-end">Amount</th>
-                        <th class="text-center">Status</th>
+                    <tr>
+                        <th style="width: 20%;">Date & Time</th>
+                        <th style="width: 25%;">Transaction Ref</th>
+                        <th style="width: 20%;">Method</th>
+                        <th class="text-end" style="width: 20%;">Amount</th>
+                        <th class="text-center" style="width: 15%;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -27,30 +192,58 @@
                         foreach (var payment in Model)
                         {
                             <tr>
-                                <td class="text-muted">@payment.payment_date?.ToString("dd MMM yyyy, hh:mm tt")</td>
                                 <td>
-                                    @*  *@
-                                    <span class="fw-bold text-dark">@(payment.transaction_id ?? "N/A")</span>
+                                    <div class="fw-bold text-dark">@payment.payment_date?.ToString("dd MMM yyyy")</div>
+                                    <div class="text-muted small">@payment.payment_date?.ToString("hh:mm tt")</div>
                                 </td>
                                 <td>
-                                    @*  *@
-                                    <span class="text-capitalize">@payment.payment_method</span>
+                                    <span class="txn-id">
+                                        #@(payment.transaction_id ?? "N/A")
+                                    </span>
                                 </td>
-                                <td class="text-end fw-bold text-primary">Rs. @payment.amount.ToString("N2")</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (payment.payment_method?.ToLower().Contains("card") == true)
+                                        {
+                                            <i class="fas fa-credit-card text-primary mr-2"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-university text-success mr-2"></i>
+                                        }
+                                        <span class="text-capitalize text-secondary fw-bold">@payment.payment_method</span>
+                                    </div>
+                                </td>
+                                <td class="text-end amount-text">
+                                    Rs. @payment.amount.ToString("N2")
+                                </td>
                                 <td class="text-center">
                                     @{
                                         var status = payment.payment_status?.ToLower();
-                                        var badgeClass = (status == "paid" || status == "successful") ? "bg-success" : "bg-warning";
+                                        var pillStyles = (status == "paid" || status == "successful")
+                                        ? "background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;"
+                                        : "background-color: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2;";
                                     }
-                                    <span class="badge @badgeClass text-white" style="padding: 5px 12px; border-radius: 20px;">
+                                    <span class="status-pill" style="@pillStyles">
+                                        <i class="fas fa-check-circle"></i>
                                         @payment.payment_status
                                     </span>
                                 </td>
                             </tr>
                         }
                     }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted font-italic">
+                                No payment records found in your account history.
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
