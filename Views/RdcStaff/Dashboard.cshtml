@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "RDC Staff Dashboard";
 }
 
@@ -62,8 +62,8 @@
                     <a asp-action="Orders" class="btn btn-outline-info w-100 mb-2">
                         <i class="fas fa-shopping-cart"></i> View Orders
                     </a>
-                    <a href="#" class="btn btn-outline-warning w-100 mb-2">
-                        <i class="fas fa-plus-circle"></i> Add Product
+                    <a asp-controller="Products" asp-action="Manage" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-plus-circle"></i> Manage Products
                     </a>
                 </div>
             </div>
