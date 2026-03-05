@@ -45,6 +45,10 @@ namespace ISDN.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [Column("admin_status")]
+        [MaxLength(50)]
+        public string? AdminStatus { get; set; }
+
         // Navigation properties
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }

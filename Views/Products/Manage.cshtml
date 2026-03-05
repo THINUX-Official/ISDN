@@ -1,0 +1,137 @@
+@model IEnumerable<ISDN.Models.Product>
+
+@{
+    ViewData["Title"] = "Manage Products";
+}
+
+<div class="container-fluid py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-boxes"></i> Product Management</h2>
+            <p class="text-muted">Manage your product catalog</p>
+        </div>
+        <div class="col text-end">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Add New Product
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Image</th>
+                            <th>Product Name</th>
+                            <th>SKU</th>
+                            <th>Category</th>
+                            <th>Unit Price</th>
+                            <th>Status</th>
+                            <th>Created Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var product in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(product.ProductImageUrl))
+                                        {
+                                            <img src="@product.ProductImageUrl" alt="@product.ProductName" 
+                                                 class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                                 style="width: 60px; height: 60px;">
+                                                <i class="fas fa-image fa-2x"></i>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong>@product.ProductName</strong>
+                                        @if (!string.IsNullOrEmpty(product.Description))
+                                        {
+                                            <br /><small class="text-muted">@(product.Description.Length > 50 ? product.Description.Substring(0, 50) + "..." : product.Description)</small>
+                                        }
+                                    </td>
+                                    <td>@(product.Sku ?? "N/A")</td>
+                                    <td>@(product.Category ?? "N/A")</td>
+                                    <td><strong>LKR @product.UnitPrice.ToString("N2")</strong></td>
+                                    <td>
+                                        @if (product.IsActive)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>
+                                        }
+                                    </td>
+                                    <td>@product.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@product.ProductId" 
+                                               class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-action="Details" asp-route-id="@product.ProductId" 
+                                               class="btn btn-sm btn-info" title="Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @* Only ADMIN can delete products *@
+                                            @if (User.IsInRole("ADMIN"))
+                                            {
+                                                <a asp-action="Delete" asp-route-id="@product.ProductId" 
+                                                   class="btn btn-sm btn-danger" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>No products found. Click "Add New Product" to get started.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
