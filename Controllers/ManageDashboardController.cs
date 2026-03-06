@@ -292,30 +292,32 @@ namespace ISDN.Controllers
             var rdcId = User.Claims.FirstOrDefault(c => c.Type == "RdcId")?.Value;
             int? userRdcId = string.IsNullOrEmpty(rdcId) ? null : int.Parse(rdcId);
 
-            var query = _context.Orders
-                .Where(o => o.Status == "PENDING")
-                .Include(o => o.User)
-                .AsQueryable();
+            // Use projection to avoid selecting columns that may not exist (e.g. admin_status)
+            var baseQuery = _context.Orders
+                .Where(o => o.Status == "PENDING");
 
             if (userRdcId.HasValue)
-                query = query.Where(o => o.RdcId == userRdcId.Value);
+                baseQuery = baseQuery.Where(o => o.RdcId == userRdcId.Value);
 
-            var orders = await query.OrderBy(o => o.OrderDate).ToListAsync();
-
-            var model = new PendingOrdersReportViewModel
-            {
-                Orders         = orders.Select(o => new PendingOrderRow
+            var orders = await baseQuery
+                .OrderBy(o => o.OrderDate)
+                .Select(o => new PendingOrderRow
                 {
                     OrderId         = o.OrderId,
                     OrderNumber     = o.OrderNumber,
-                    CustomerName    = o.User?.FullName ?? "—",
+                    CustomerName    = o.User != null ? o.User.FullName : "—",
                     OrderDate       = o.OrderDate,
                     TotalAmount     = o.TotalAmount,
                     DeliveryAddress = o.DeliveryAddress ?? "—",
                     DaysWaiting     = (DateTime.Today - o.OrderDate.Date).Days
-                }).ToList(),
-                TotalPending   = orders.Count,
-                TotalValue     = orders.Sum(o => o.TotalAmount)
+                })
+                .ToListAsync();
+
+            var model = new PendingOrdersReportViewModel
+            {
+                Orders       = orders,
+                TotalPending = orders.Count,
+                TotalValue   = orders.Sum(o => o.TotalAmount)
             };
 
             return View(model);
@@ -327,15 +329,24 @@ namespace ISDN.Controllers
             var rdcId = User.Claims.FirstOrDefault(c => c.Type == "RdcId")?.Value;
             int? userRdcId = string.IsNullOrEmpty(rdcId) ? null : int.Parse(rdcId);
 
-            var query = _context.Orders
-                .Where(o => o.Status == "PENDING")
-                .Include(o => o.User)
-                .AsQueryable();
+            var baseQuery = _context.Orders
+                .Where(o => o.Status == "PENDING");
 
             if (userRdcId.HasValue)
-                query = query.Where(o => o.RdcId == userRdcId.Value);
+                baseQuery = baseQuery.Where(o => o.RdcId == userRdcId.Value);
 
-            var orders = await query.OrderBy(o => o.OrderDate).ToListAsync();
+            var orders = await baseQuery
+                .OrderBy(o => o.OrderDate)
+                .Select(o => new
+                {
+                    o.OrderId,
+                    o.OrderNumber,
+                    CustomerName    = o.User != null ? o.User.FullName : "—",
+                    o.OrderDate,
+                    o.TotalAmount,
+                    DeliveryAddress = o.DeliveryAddress ?? "—"
+                })
+                .ToListAsync();
 
             var csv = new System.Text.StringBuilder();
             csv.AppendLine("Order ID,Order Number,Customer,Order Date,Total Amount,Delivery Address,Days Waiting");
