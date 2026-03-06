@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ISDN.Constants;
 using ISDN.Repositories;
 using ISDN.Data;
+using ISDN.Models;
 using Microsoft.EntityFrameworkCore;
 using ISDN_Distribution.Repositories;
 using ISDN_Distribution.Models;
@@ -140,6 +141,131 @@ namespace ISDN.Controllers
                 .ToListAsync();
 
             return View(orders);
+        }
+
+        // --- CART FUNCTIONALITY ---
+
+        private const string CartSessionKey = "CustomerCart";
+
+        private List<CartItemViewModel> GetCartItems()
+        {
+            var sessionData = HttpContext.Session.GetString(CartSessionKey);
+            if (string.IsNullOrEmpty(sessionData))
+            {
+                return new List<CartItemViewModel>();
+            }
+            return System.Text.Json.JsonSerializer.Deserialize<List<CartItemViewModel>>(sessionData) ?? new List<CartItemViewModel>();
+        }
+
+        private void SaveCartItems(List<CartItemViewModel> cart)
+        {
+            var sessionData = System.Text.Json.JsonSerializer.Serialize(cart);
+            HttpContext.Session.SetString(CartSessionKey, sessionData);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddToCart(int productId, int quantity)
+        {
+            if (quantity <= 0) quantity = 1;
+
+            var product = await _productRepository.GetByIdAsync(productId);
+            if (product == null || !product.IsActive)
+            {
+                TempData["ErrorMessage"] = "Product is unavailable.";
+                return RedirectToAction(nameof(Products));
+            }
+
+            var cart = GetCartItems();
+            var existingItem = cart.FirstOrDefault(c => c.ProductId == productId);
+
+            if (existingItem != null)
+            {
+                existingItem.Quantity += quantity;
+            }
+            else
+            {
+                cart.Add(new CartItemViewModel
+                {
+                    ProductId = product.ProductId,
+                    ProductName = product.ProductName,
+                    UnitPrice = product.UnitPrice,
+                    Quantity = quantity,
+                    ProductImageUrl = product.ProductImageUrl
+                });
+            }
+
+            SaveCartItems(cart);
+            TempData["SuccessMessage"] = $"{product.ProductName} added to your cart!";
+            return RedirectToAction(nameof(Products));
+        }
+
+        [HttpGet]
+        public IActionResult Cart()
+        {
+            var cart = GetCartItems();
+            return View(cart);
+        }
+
+        [HttpPost]
+        public IActionResult RemoveFromCart(int productId)
+        {
+            var cart = GetCartItems();
+            var itemToRemove = cart.FirstOrDefault(c => c.ProductId == productId);
+            if (itemToRemove != null)
+            {
+                cart.Remove(itemToRemove);
+                SaveCartItems(cart);
+                TempData["SuccessMessage"] = "Item removed from cart.";
+            }
+
+            return RedirectToAction(nameof(Cart));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CheckoutCart()
+        {
+            var cart = GetCartItems();
+            if (!cart.Any())
+            {
+                TempData["ErrorMessage"] = "Your cart is empty.";
+                return RedirectToAction(nameof(Cart));
+            }
+
+            var userId = GetUserId();
+            var customer = await _customerRepository.GetByUserIdAsync(userId);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found. Cannot place order.";
+                return RedirectToAction(nameof(Cart));
+            }
+
+            var newOrder = new ISDN.Models.Order
+            {
+                UserId = userId,
+                CustomerId = customer.CustomerId,
+                RdcId = customer.RdcId,
+                OrderNumber = "ORD-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + new Random().Next(100, 999),
+                OrderDate = DateTime.Now,
+                TotalAmount = cart.Sum(c => c.Total),
+                Status = "Pending",
+                DeliveryAddress = customer.street_address + ", " + customer.city,
+                OrderItems = cart.Select(c => new ISDN.Models.OrderItem
+                {
+                    ProductId = c.ProductId,
+                    Quantity = c.Quantity,
+                    Subtotal = c.Total
+                }).ToList()
+            };
+
+            await _context.Orders.AddAsync(newOrder);
+            await _context.SaveChangesAsync();
+
+            // Clear the cart
+            HttpContext.Session.Remove(CartSessionKey);
+
+            TempData["SuccessMessage"] = $"Order placed successfully! Your order number is {newOrder.OrderNumber}.";
+            return RedirectToAction(nameof(Orders));
         }
     }
 }
