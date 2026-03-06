@@ -1,0 +1,106 @@
+@model IEnumerable<ISDN.Models.Product>
+
+@{
+    ViewData["Title"] = "Browse Products";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2><i class="fas fa-box-open text-primary"></i> Browse Products</h2>
+            <p class="text-muted">Find everything you need and add it to your cart.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-controller="Customer" asp-action="Cart" class="btn btn-primary btn-lg position-relative">
+                <i class="fas fa-shopping-cart"></i> View Cart
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mt-2">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 product-card">
+                        <div class="position-relative overflow-hidden text-center bg-light" style="height: 200px;">
+                            @if (!string.IsNullOrEmpty(item.ProductImageUrl))
+                            {
+                                <img src="@item.ProductImageUrl" class="img-fluid h-100 object-fit-contain p-3" alt="@item.ProductName">
+                            }
+                            else
+                            {
+                                <i class="fas fa-box fa-5x text-secondary" style="line-height: 200px;"></i>
+                            }
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold text-truncate" title="@item.ProductName">@item.ProductName</h5>
+                            <p class="text-muted small mb-2">SKU: @item.Sku</p>
+                            <p class="card-text text-truncate-2" style="font-size: 0.9rem;" title="@item.Description">
+                                @(string.IsNullOrEmpty(item.Description) ? "No description available." : item.Description)
+                            </p>
+                            
+                            <div class="mt-auto pt-3 border-top">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fs-5 fw-bold text-success">LKR @item.UnitPrice.ToString("N2")</span>
+                                    <span class="badge bg-primary text-white">@item.Category</span>
+                                </div>
+                                
+                                <form asp-controller="Customer" asp-action="AddToCart" method="post" class="d-flex gap-2">
+                                    <input type="hidden" name="productId" value="@item.ProductId" />
+                                    <input type="number" name="quantity" class="form-control form-control-sm text-center" value="1" min="1" max="100" style="width: 70px;" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm flex-grow-1 w-100" style="white-space: nowrap;">
+                                        <i class="fas fa-cart-plus"></i> Add
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info py-4 text-center w-100">
+                    <i class="fas fa-info-circle fa-2x mb-3 text-info"></i>
+                    <h4>No products available</h4>
+                    <p class="mb-0">There are currently no active products in the catalogue. Please check back later.</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .product-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
