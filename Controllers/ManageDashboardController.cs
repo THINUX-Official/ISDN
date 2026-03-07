@@ -353,7 +353,7 @@ namespace ISDN.Controllers
             foreach (var o in orders)
             {
                 var days = (DateTime.Today - o.OrderDate.Date).Days;
-                csv.AppendLine($"{o.OrderId},{o.OrderNumber},{o.User?.FullName},{o.OrderDate:yyyy-MM-dd},{o.TotalAmount:F2},{o.DeliveryAddress},{days}");
+                csv.AppendLine($"{o.OrderId},{o.OrderNumber},{o.CustomerName},{o.OrderDate:yyyy-MM-dd},{o.TotalAmount:F2},{o.DeliveryAddress},{days}");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
