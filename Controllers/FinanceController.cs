@@ -89,5 +89,79 @@ namespace ISDN.Controllers
             ViewBag.RdcId = GetUserRdcId();
             return View(orders);
         }
+
+        [HttpGet]
+        [Authorize(Roles = "FINANCE,ADMIN")]
+        public async Task<IActionResult> AdminRevenue()
+        {
+            // Determine RDC context for the logged-in user
+            var userRdc = GetUserRdcId();
+            var isAdminOrHead = User.IsInRole(UserRoles.Admin) || IsHeadOfficeUser();
+
+            // Payments - include Order and filter by RDC
+            var paymentsQuery = _context.Payments.Include(p => p.Order).AsQueryable();
+            if (!isAdminOrHead && userRdc.HasValue)
+            {
+                paymentsQuery = paymentsQuery.Where(p => (p.RdcId.HasValue && p.RdcId == userRdc) || (p.Order != null && p.Order.RdcId == userRdc));
+            }
+
+            // Total Sales: only payments marked as Paid/Successful
+            var totalSales = await paymentsQuery
+                .Where(p => p.PaymentStatus != null && (
+                    p.PaymentStatus.ToLower() == "paid" || p.PaymentStatus.ToLower() == "completed" || p.PaymentStatus.ToLower() == "successful"))
+                .SumAsync(p => (decimal?)p.Amount) ?? 0m;
+
+            // Returns: calculate returned item value by joining order_returns -> order_items -> orders
+            var returnsQuery = from r in _context.OrderReturns
+                               join oi in _context.OrderItems on new { r.OrderId, r.ProductId } equals new { oi.OrderId, oi.ProductId }
+                               join o in _context.Orders on r.OrderId equals o.OrderId
+                               select new { Return = r, OrderItem = oi, Order = o };
+
+            if (!isAdminOrHead && userRdc.HasValue)
+            {
+                returnsQuery = returnsQuery.Where(x => x.Order.RdcId == userRdc);
+            }
+
+            // compute returned value: unit price = subtotal / quantity, times returned quantity
+            var totalReturns = await returnsQuery
+                .Where(x => x.OrderItem.Quantity > 0)
+                .Select(x => (decimal?)( (x.OrderItem.Subtotal / (decimal)x.OrderItem.Quantity) * x.Return.Quantity ))
+                .SumAsync() ?? 0m;
+
+            // Customers count (active) filtered by RDC
+            var customersQuery = _context.Customers.AsQueryable();
+            if (!isAdminOrHead && userRdc.HasValue)
+            {
+                customersQuery = customersQuery.Where(c => c.RdcId == userRdc);
+            }
+            var customerCount = await customersQuery.CountAsync(c => c.IsActive);
+
+            // Completed orders (DELIVERED)
+            var ordersQuery = _context.Orders.AsQueryable();
+            if (!isAdminOrHead && userRdc.HasValue)
+            {
+                ordersQuery = ordersQuery.Where(o => o.RdcId == userRdc);
+            }
+            var completedOrders = await ordersQuery.CountAsync(o => o.Status != null && o.Status.ToUpper() == "DELIVERED");
+
+            var viewModel = new ISDN.ViewModels.AdminRevenueViewModel
+            {
+                TotalSales = totalSales,
+                TotalReturns = totalReturns,
+                NetRevenue = totalSales - totalReturns,
+                CustomerCount = customerCount,
+                CompletedOrders = completedOrders,
+                RdcId = userRdc ?? 0
+            };
+
+            if (userRdc.HasValue)
+            {
+                var rdc = await _context.Rdcs.FindAsync(userRdc.Value);
+                if (rdc != null) viewModel.RdcName = rdc.RdcName;
+            }
+
+            // Return the Finance view placed in Views/Finance/AdminRevenue.cshtml
+            return View("AdminRevenue", viewModel);
+        }
     }
 }
