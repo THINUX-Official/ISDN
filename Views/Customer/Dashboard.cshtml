@@ -12,7 +12,7 @@
                 <p class="lead">Welcome to your personal dashboard</p>
                 <hr class="my-4">
                 <p>
-                    As a customer, you can browse products, place orders, and manage your account. 
+                    As a customer, you can browse products, place orders, and manage your account.
                     This dashboard provides a centralized location to monitor your activity.
                 </p>
                 <p class="mb-0">
@@ -29,7 +29,7 @@
                     <i class="fas fa-shopping-bag fa-3x text-primary mb-3"></i>
                     <h5 class="card-title">Browse Products</h5>
                     <p class="card-text">Explore our full product catalog.</p>
-                    <a href="#" class="btn btn-primary w-100">View Products</a>
+                    <a asp-controller="Customer" asp-action="Products" class="btn btn-primary w-100">View Products</a>
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
                     <i class="fas fa-credit-card fa-3x text-warning mb-3"></i>
                     <h5 class="card-title">Payment History</h5>
                     <p class="card-text">View transactions and invoices.</p>
-                    <a href="#" class="btn btn-warning w-100 text-white">View Payments</a>
+                    <a href="CustomerPaymentHistory" class="btn btn-warning w-100 text-white">View Payments</a>
                 </div>
             </div>
         </div>

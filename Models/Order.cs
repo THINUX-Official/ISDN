@@ -45,6 +45,12 @@ namespace ISDN.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // orders table in this database does not contain an 'admin_status' column in some deployments.
+        // Mark as not mapped to avoid EF Core selecting a non-existent column which causes MySQL errors.
+        [NotMapped]
+        [MaxLength(50)]
+        public string? AdminStatus { get; set; }
+
         // Navigation properties
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
