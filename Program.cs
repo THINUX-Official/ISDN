@@ -6,9 +6,8 @@ using ISDN.Data;
 using ISDN.Models;
 using ISDN.Services;
 using ISDN.Repositories;
-using ISDN.Middleware;
 using ISDN_Distribution.Repositories;
-using ISDN_Distribution.Models;
+using ISDN.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +39,13 @@ options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21))
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = "CustomCookie"; // Redirect to login instead of 401
+})
+.AddCookie("CustomCookie", options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromHours(2);
 })
 .AddJwtBearer(options =>
 {
@@ -88,14 +93,11 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-// Program.cs එකේ මේ පේළිය එකතු කරන්න
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 
 // Add HttpContextAccessor for accessing HTTP context in services
 builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddScoped<IRdcOrderRepository, RdcOrderRepository>();
 
 // Add Session support for temporary data storage
 builder.Services.AddSession(options =>

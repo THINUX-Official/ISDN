@@ -83,24 +83,4 @@ namespace ISDN.Models
         public int     LowStockCount      { get; set; }
         public int     TotalQtyAvailable  { get; set; }
     }
-
-    // ── Pending Orders Report ViewModels ─────────────────────────────────────
-
-    public class PendingOrderRow
-    {
-        public int      OrderId          { get; set; }
-        public string   OrderNumber      { get; set; } = "";
-        public string   CustomerName     { get; set; } = "";
-        public DateTime OrderDate        { get; set; }
-        public decimal  TotalAmount      { get; set; }
-        public string   DeliveryAddress  { get; set; } = "";
-        public int      DaysWaiting      { get; set; }
-    }
-
-    public class PendingOrdersReportViewModel
-    {
-        public List<PendingOrderRow> Orders { get; set; } = new();
-        public int     TotalPending  { get; set; }
-        public decimal TotalValue    { get; set; }
-    }
 }
