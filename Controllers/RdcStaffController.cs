@@ -64,7 +64,7 @@ namespace ISDN.Controllers
         public async Task<IActionResult> MarkAsPacked(int orderId)
         {
             int adminId = GetUserId();
-            bool success = await _rdcOrderRepository.UpdateOrderStatusAsync(orderId, "Packed", adminId);
+            bool success = await _rdcOrderRepository.UpdateOrderStatusAsync(orderId, "PACKED", adminId);
 
             if (success)
             {

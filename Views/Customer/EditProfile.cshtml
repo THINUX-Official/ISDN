@@ -1,0 +1,73 @@
+﻿@model ISDN.ViewModels.CustomerProfileViewModel
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 py-4 px-4 border-bottom">
+                    <h3 class="fw-bold mb-0 text-primary"><i class="fas fa-user-circle me-2"></i>Profile Management</h3>
+                    <p class="text-muted small mb-0">Update your contact details and security credentials</p>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="EditProfile" method="post">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">First Name</label>
+                                <input asp-for="FirstName" class="form-control bg-light border-0 py-2" placeholder="First Name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Last Name</label>
+                                <input asp-for="LastName" class="form-control bg-light border-0 py-2" placeholder="Last Name">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-muted"></i></span>
+                                    <input asp-for="Email" class="form-control bg-light border-0 py-2" type="email">
+                                </div>
+                                <div class="form-text text-info">Changing this will update your login username.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Phone Number</label>
+                                <input asp-for="PhoneNumber" class="form-control bg-light border-0 py-2">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Change Password</label>
+                                <input asp-for="NewPassword" type="password" class="form-control bg-light border-0 py-2" placeholder="Leave blank to keep current">
+                            </div>
+
+                            <div class="col-12 mt-5">
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="/Customer/Dashboard" class="text-muted text-decoration-none small"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
+                                    <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm py-2 fw-bold">
+                                        Update Profile
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <footer class="mt-5 p-4 bg-white rounded-4 shadow-sm border border-light">
+                <div class="row align-items-center text-center text-md-start">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <h6 class="fw-bold text-dark mb-1">ISDN Distribution HQ</h6>
+                        <p class="small text-muted mb-0">For billing address changes or business inquiries, contact our Head Office team.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2">
+                            @foreach (var email in Model.HeadOfficeEmails)
+                            {
+                                <a href="mailto:@email" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 small">
+                                    <i class="fas fa-paper-plane me-1"></i> @email
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+</div>

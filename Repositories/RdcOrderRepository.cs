@@ -47,7 +47,7 @@ namespace ISDN_Distribution.Repositories
                     .ToList(),
 
                 IsStockAvailable = true,
-                IsPacked = o.Status.Equals("Packed", StringComparison.OrdinalIgnoreCase)
+                IsPacked = o.Status.Equals("PACKED", StringComparison.OrdinalIgnoreCase)
             }).ToList();
         }
 
