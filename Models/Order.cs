@@ -64,8 +64,12 @@ namespace ISDN.Models
         [Column("estimated_delivery_at")]
         public DateTime? EstimatedDeliveryAt { get; set; }
 
+        
+
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+        public virtual ICollection<OrderStatusLog> OrderStatusLogs { get; set; } = new List<OrderStatusLog>();
     }
 }

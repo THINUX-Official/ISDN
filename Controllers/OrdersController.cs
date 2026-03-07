@@ -1,17 +1,14 @@
-﻿using ISDN.Models;
-using ISDN.Data; // ISDN_Distribution.Data වෙනුවට
+﻿using ISDN.Data;
+using ISDN.Models;
 using ISDN_Distribution.Models;
 using ISDN_Distribution.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // FirstOrDefaultAsync සඳහා අනිවාර්යයි
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq; // Select, FirstOrDefault සඳහා
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ISDN_Distribution.Controllers
@@ -31,7 +28,7 @@ namespace ISDN_Distribution.Controllers
 
         public async Task<IActionResult> MyOrders()
         {
-            var userIdClaim = User.FindFirst("user_id")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst("user_id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) return RedirectToAction("Login", "Account");
 
             if (int.TryParse(userIdClaim, out int currentUserId))
@@ -46,13 +43,12 @@ namespace ISDN_Distribution.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitReturn(string orderId, int[] selectedItems, int reasonId, string comments)
         {
-            var userIdClaim = User.FindFirst("user_id")?.Value;
+            var userIdClaim = User.FindFirst("user_id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) return RedirectToAction("Login", "Account");
 
-            // OrderNumber එකෙන් නෙවෙයි, OrderId (Primary Key) එකෙන් සර්ච් කරලා බලන්න 
-            // නැත්නම් OrderNumber එක හරියටම Database එකේ තියෙනවද බලන්න
+            // Search by OrderNumber as passed from the view
             var order = await _context.Orders
-                .AsNoTracking() // Performance වලට හොඳයි
+                .Include(o => o.Deliveries)
                 .FirstOrDefaultAsync(o => o.OrderNumber == orderId);
 
             if (order == null)
@@ -61,8 +57,14 @@ namespace ISDN_Distribution.Controllers
                 return RedirectToAction("MyOrders");
             }
 
-            // පැය 72 සීමාව පරීක්ෂා කිරීම
-            if ((DateTime.Now - order.OrderDate).TotalHours > 72)
+            // Calculate return window based on actual delivery date if available
+            var deliveryDate = order.Deliveries?
+                                .Where(d => d.Status.ToUpper() == "DELIVERED")
+                                .OrderByDescending(d => d.DeliveryDate)
+                                .Select(d => d.DeliveryDate)
+                                .FirstOrDefault() ?? order.OrderDate;
+
+            if ((DateTime.Now - deliveryDate).TotalHours > 72)
             {
                 TempData["Error"] = "Return period (72h) has expired.";
                 return RedirectToAction("MyOrders");
@@ -83,7 +85,7 @@ namespace ISDN_Distribution.Controllers
                             ReasonId = reasonId,
                             OtherReasonDescription = (reasonId == 4) ? comments : null,
                             RefundStatus = "PENDING",
-                            AdminStatus = "PENDING", // මේක අනිවාර්යයෙන් දාන්න
+                            AdminStatus = "PENDING",
                             CreatedAt = DateTime.Now,
                             ReturnType = "REFUND"
                         };
@@ -93,6 +95,11 @@ namespace ISDN_Distribution.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "Your return request has been submitted successfully!";
             }
+            else
+            {
+                TempData["Error"] = "Please select at least one item to return.";
+            }
+
             return RedirectToAction("MyOrders");
         }
     }

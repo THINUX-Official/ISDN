@@ -3,10 +3,11 @@ using ISDN.Data;
 using ISDN.Models;
 using ISDN.Services;
 using ISDN.ViewModels;
+using ISDN_Distribution.Models;
+using ISDN_Distribution.Repositories;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ISDN_Distribution.Repositories;
-using ISDN_Distribution.Models;
 
 
 namespace ISDN.Controllers
@@ -16,16 +17,16 @@ namespace ISDN.Controllers
     /// </summary>
     public class AccountController : Controller
     {
-        private readonly IAuthenticationService _authService;
+        private readonly ISDN.Services.IAuthenticationService _authService;
         private readonly IAuditLogService _auditService;
         private readonly ILogger<AccountController> _logger;
         private readonly IsdnDbContext _context; // මේක අලුතෙන් එකතු කළා
 
         public AccountController(
-            IAuthenticationService authService,
-            IAuditLogService auditService,
-            ILogger<AccountController> logger,
-            IsdnDbContext context) // DbContext එක මෙතනටත් එකතු කළා
+    ISDN.Services.IAuthenticationService authService,
+    IAuditLogService auditService,
+    ILogger<AccountController> logger,
+    IsdnDbContext context)
         {
             _authService = authService;
             _auditService = auditService;
@@ -127,10 +128,13 @@ namespace ISDN.Controllers
             if (ModelState.IsValid)
             {
                 var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
+                // FIX: Explicitly use your custom service to avoid the 'ambiguous reference' (Error CS0104)
                 var result = await _authService.LoginAsync(model.Email, model.Password, ipAddress);
 
                 if (result.Success && result.User != null)
                 {
+                    // 1. Keep your JWT Cookie for the API/Services
                     Response.Cookies.Append("AuthToken", result.Token, new CookieOptions
                     {
                         HttpOnly = true,
@@ -139,7 +143,24 @@ namespace ISDN.Controllers
                         Expires = DateTimeOffset.UtcNow.AddHours(2)
                     });
 
-                    _logger.LogInformation($"User logged in: {model.Email} with role {result.User.Role?.RoleName}");
+                    // 2. Build the Identity Claims
+                    var claims = new List<System.Security.Claims.Claim>
+            {
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, model.Email),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, result.User.UserId.ToString()),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, result.User.Role?.RoleName ?? "Driver")
+            };
+
+                    var claimsIdentity = new System.Security.Claims.ClaimsIdentity(claims, "CookieAuth");
+
+                    // FIX: Using the fully qualified namespace for SignInAsync to avoid the 'BinaryReader' error (Error CS1503)
+                    // This ensures we call the Authentication extension, not a System.IO method.
+                    await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.SignInAsync(
+                        this.HttpContext,
+                        "CookieAuth",
+                        new System.Security.Claims.ClaimsPrincipal(claimsIdentity));
+
+                    _logger.LogInformation($"User logged in: {model.Email}");
 
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     {
