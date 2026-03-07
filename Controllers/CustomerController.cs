@@ -1,19 +1,17 @@
 using ISDN.Constants;
 using ISDN.Data;
 using ISDN.Models;
-using Microsoft.EntityFrameworkCore;
-using ISDN_Distribution.Repositories;
 using ISDN.Repositories;
 using ISDN.ViewModels;
 using ISDN_Distribution.Models;
-using System.Net.Mail;
-using System.Net;
-using System.Text;
-using Microsoft.Extensions.Configuration;
 using ISDN_Distribution.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
 
 namespace ISDN.Controllers
 {

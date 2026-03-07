@@ -116,6 +116,7 @@ namespace ISDN.Controllers
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error loading admin dashboard: {ex.Message}");
                 ViewBag.TotalUsers = 0;
                 ViewBag.RecentLogs = Enumerable.Empty<AuditLog>();
                 ViewBag.ErrorMessage = "Unable to load dashboard data. Please try again.";
