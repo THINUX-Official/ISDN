@@ -26,6 +26,7 @@ namespace ISDN_Distribution.Repositories
             var ordersFromDb = await _context.Orders
                 .Where(o => o.CustomerId == customer.CustomerId && o.RdcId == customer.RdcId)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Include(o => o.Deliveries) // <--- CRITICAL FIX: Add this line
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -50,5 +51,125 @@ namespace ISDN_Distribution.Repositories
         {
             return await GetCustomerOrdersAsync(userId);
         }
+
+        public async Task<List<Order>> GetOrdersByStatusAndRdcAsync(string status, int rdcId)
+        {
+            return await _context.Orders
+                .Where(o => o.Status == status && o.RdcId == rdcId)
+                .Include(o => o.Customer)
+                .Include(o => o.OrderStatusLogs) // Include logs to get the real update time
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus, int updatedById)
+        {
+            try
+            {
+                var order = await _context.Orders.FindAsync(orderId);
+                if (order == null) return false;
+
+                // DEBUG: Print RDC info to Output Window
+                System.Diagnostics.Debug.WriteLine($"DEBUG: Order {orderId} belongs to RDC: {order.RdcId}");
+
+                order.Status = newStatus;
+
+                var log = new OrderStatusLog
+                {
+                    OrderId = orderId,
+                    Status = newStatus,
+                    UpdatedById = updatedById,
+                    CreatedAt = DateTime.Now
+                };
+                _context.OrderStatusLogs.Add(log);
+
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                // THIS IS THE MISSING PIECE. Check your Visual Studio Output Window.
+                System.Diagnostics.Debug.WriteLine($"DB ERROR: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<List<User>> GetActiveDriversByRdcAsync(int rdcId)
+        {
+            // RoleId 5 Drivers
+            return await _context.Users
+                .Where(u => u.RoleId == 5 && u.RdcId == rdcId && u.IsActive == true)
+                .ToListAsync();
+        }
+
+
+        public async Task<List<Order>> GetOnTheWayOrdersByRdcAsync(int rdcId)
+        {
+            return await _context.Orders
+                .Where(o => o.Status == "ON_THE_WAY" && o.RdcId == rdcId)
+                .Include(o => o.Customer) 
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+
+        public async Task<List<Delivery>> GetDriverTasksAsync(int driverId, int rdcId)
+        {
+            // Use ToListAsync to execute the query immediately
+            return await _context.Deliveries
+                .Include(d => d.Order)
+                    .ThenInclude(o => o.Customer)
+                .Where(d => d.DriverId == driverId && d.RdcId == rdcId)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<bool> AssignDriverAndDispatchAsync(int orderId, int driverId, int userId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _context.Orders.FindAsync(orderId);
+                if (order == null) return false;
+
+                order.Status = "ON_THE_WAY";
+
+                var delivery = new Delivery
+                {
+                    OrderId = orderId,
+                    RdcId = order.RdcId,
+                    DriverId = driverId,
+                    Status = "In Transit",
+                    ScheduledDate = DateTime.Now,
+                    CreatedAt = DateTime.Now
+                };
+
+                var log = new OrderStatusLog
+                {
+                    OrderId = orderId,
+                    Status = "ON_THE_WAY",
+                    UpdatedById = userId,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Deliveries.Add(delivery);
+                _context.OrderStatusLogs.Add(log);
+                _context.Orders.Update(order);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                // Print the specific database error
+                var message = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                System.Diagnostics.Debug.WriteLine($"DB CONSTRAINT ERROR: {message}");
+
+                return false;
+            }
+        }
+
     }
-} // <--- මෙතන වරහන් දෙකක් අනිවාර්යයි
+} 

@@ -1,5 +1,4 @@
-@model IEnumerable<ISDN.Models.Order>
-
+@model ISDN_Distribution.Models.LogisticsScheduleViewModel
 @{
     ViewData["Title"] = "Schedule Delivery";
 }
@@ -7,55 +6,217 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col">
-            <h2><i class="fas fa-calendar-plus"></i> Schedule Delivery</h2>
-            <p class="text-muted">Schedule deliveries for confirmed orders</p>
+            <h2><i class="fas fa-truck-loading text-primary"></i> Delivery Scheduling</h2>
+            <p class="text-muted">Assign drivers to acknowledged orders and track active shipments.</p>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    @if (Model != null && Model.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Customer</th>
-                                        <th>Order Date</th>
-                                        <th>Total Amount</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var order in Model)
-                                    {
-                                        <tr>
-                                            <td>@order.OrderId</td>
-                                            <td>@order.User?.FullName</td>
-                                            <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
-                                            <td>$@order.TotalAmount.ToString("N2")</td>
-                                            <td><span class="badge bg-warning">@order.Status</span></td>
-                                            <td>
-                                                <a href="#" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-calendar-check"></i> Schedule
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-center text-muted py-5">No pending orders to schedule</p>
-                    }
+    <ul class="nav nav-tabs" id="scheduleTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">
+                <i class="fas fa-clock"></i> Ready to Dispatch
+                <span class="badge bg-primary ms-1">@Model.ReceivedForDeliveryOrders.Count</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="scheduled-tab" data-bs-toggle="tab" href="#scheduled" role="tab">
+                <i class="fas fa-shipping-fast"></i> On The Way
+                <span class="badge bg-info ms-1">@Model.OnTheWayOrders.Count</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content p-4 border border-top-0 bg-white shadow-sm rounded-bottom">
+        
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="m-0 text-secondary">Awaiting Driver Assignment</h4>
+            </div>
+
+            @if (!Model.ReceivedForDeliveryOrders.Any())
+            {
+                <div class="alert alert-light border text-center py-5">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="h5">All orders have been dispatched!</p>
                 </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order Details</th>
+                                <th>Location</th>
+                                <th>Wait Time</th>
+                                <th>Assign Driver</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                       <tbody>
+    @foreach (var order in Model.ReceivedForDeliveryOrders)
+    {
+        <tr>
+            <td>
+                <span class="fw-bold text-primary">#@order.OrderNumber</span><br />
+                <small class="text-muted">Placed: @order.CreatedAt.ToString("MMM dd, HH:mm")</small>
+            </td>
+            <td>
+                <i class="fas fa-map-marker-alt text-danger"></i> @order.DeliveryAddress
+            </td>
+            <td>
+                <span class="badge bg-dark timer" data-start="@order.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")">
+                    00:00:00
+                </span>
+            </td>
+
+            <td colspan="2"> 
+                                        <form asp-controller="Logistics" asp-action="AssignDriver" method="post" class="d-flex align-items-center gap-2">
+                                            @Html.AntiForgeryToken() <input type="hidden" name="orderId" value="@order.OrderId" />
+
+                                            <select name="driverId" class="form-select form-select-sm" required style="min-width: 180px;">
+                                                <option value="">-- Choose Driver --</option>
+                                                @foreach (var driver in Model.ActiveDrivers)
+                                                {
+                                                    <option value="@driver.UserId">@driver.FullName</option>
+                                                }
+                                            </select>
+
+                                            <button type="submit" class="btn btn-success btn-sm px-3">
+                                                <i class="fas fa-calendar-check"></i> Schedule
+                                            </button>
+                                        </form>
+            </td>
+        </tr>
+    }
+</tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="tab-pane fade" id="scheduled" role="tabpanel">
+            <h4 class="mb-4 text-secondary">Active Shipments</h4>
+            @if (!Model.OnTheWayOrders.Any())
+            {
+                <div class="alert alert-light border text-center py-4">
+                    <p class="text-muted m-0">No active deliveries at the moment.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Delivery Status</th>
+                                <th>Tracking</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          @foreach (var order in Model.OnTheWayOrders)
+{
+    <tr>
+        <td class="fw-bold">@order.OrderNumber</td>
+        <td>@order.Customer?.business_name</td> <td>
+            <span class="badge rounded-pill bg-info text-dark p-2 px-3">
+                <i class="fas fa-truck fa-spin me-1"></i> @order.Status
+            </span>
+        </td>
+        <td>
+           <button class="btn btn-sm btn-outline-secondary view-details-btn"
+        data-orderno="@order.OrderNumber"
+        data-business="@(order.Customer?.business_name ?? "N/A")"
+        data-address="@order.DeliveryAddress">
+    View Details
+</button>
+        </td>
+    </tr>
+}
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i> Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase fw-bold">Order Number</label>
+                    <p id="modalOrderNumber" class="h5 text-primary"></p>
+                </div>
+                <hr />
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase fw-bold">Customer / Business</label>
+                    <p id="modalBusinessName" class="fw-bold"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase fw-bold">Delivery Address</label>
+                    <p id="modalAddress" class="text-secondary"></p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function updateTimers() {
+            document.querySelectorAll('.timer').forEach(timer => {
+                const startTime = new Date(timer.getAttribute('data-start')).getTime();
+                const now = new Date().getTime();
+                const diff = now - startTime;
+
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                if (hours >= 24) {
+                    timer.classList.replace('bg-dark', 'bg-danger');
+                } else if (hours >= 2) {
+                    timer.classList.replace('bg-dark', 'bg-warning');
+                    timer.classList.add('text-dark');
+                } else {
+                    timer.classList.replace('bg-dark', 'bg-success');
+                }
+
+                timer.innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            });
+        }
+        
+        $(document).ready(function() {
+            // 1. Initialize Timers
+            setInterval(updateTimers, 1000);
+            updateTimers(); 
+
+            // 2. Initialize "View Details" Modal Logic
+            $('.view-details-btn').click(function () {
+                // Get data from button attributes
+                const orderNo = $(this).data('orderno');
+                const business = $(this).data('business') || "N/A";
+                const address = $(this).data('address');
+
+                // Populate the modal fields
+                $('#modalOrderNumber').text('#' + orderNo);
+                $('#modalBusinessName').text(business);
+                $('#modalAddress').text(address);
+
+                // Open the Bootstrap modal
+                $('#orderDetailModal').modal('show');
+            });
+        });
+    </script>
+}

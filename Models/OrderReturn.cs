@@ -19,8 +19,7 @@ namespace ISDN.Models
         [Column("quantity")]
         public int Quantity { get; set; }
 
-        // මෙතන තිබුණ [Column("reason")] එක අයින් කළා. 
-        // නැත්නම් Entity Framework එක 'reason' කියලා column එකක් database එකේ හොයනවා.
+      
         [NotMapped]
         public string? Reason => OtherReasonDescription;
 

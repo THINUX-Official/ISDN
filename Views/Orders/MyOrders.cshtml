@@ -6,26 +6,127 @@
 
 <style>
     /* Stepper Layout Fixes */
-    .stepper-wrapper { display: flex; justify-content: space-between; margin-top: 20px; position: relative; }
-    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 2; }
-    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid #ccc; width: 100%; top: 20px; left: -50%; z-index: 1; }
-    .stepper-item:first-child::before { content: none; }
-    .step-counter { width: 40px; height: 40px; border-radius: 50%; background: #ccc; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; margin-bottom: 10px; z-index: 3; }
-    .stepper-item.completed .step-counter { background-color: #28a745; }
-    .stepper-item.completed .step-name { color: #28a745; font-weight: bold; }
-    .stepper-item.completed::before { border-bottom-color: #28a745; }
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        position: relative;
+    }
+
+    .stepper-item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        z-index: 2;
+    }
+
+    .stepper-item::before {
+        position: absolute;
+        content: "";
+        border-bottom: 2px solid #ccc;
+        width: 100%;
+        top: 20px;
+        left: -50%;
+        z-index: 1;
+    }
+
+    .stepper-item:first-child::before {
+        content: none;
+    }
+
+    .step-counter {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 10px;
+        z-index: 3;
+    }
+
+    .stepper-item.completed .step-counter {
+        background-color: #28a745;
+    }
+
+    .stepper-item.completed .step-name {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+    .stepper-item.completed::before {
+        border-bottom-color: #28a745;
+    }
 
     /* Order Card UI */
-    .order-card { background: #fff; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px; overflow: hidden; border: none; }
-    .product-icon { width: 45px; height: 45px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #6c757d; }
+    .order-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        overflow: hidden;
+        border: none;
+    }
+
+    .product-icon {
+        width: 45px;
+        height: 45px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: #6c757d;
+    }
 
     /* Return Stepper CSS */
-    .return-stepper { align-items: center; position: relative; }
-    .step-dot { width: 35px; height: 35px; border-radius: 50%; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 14px; transition: 0.3s; margin: 0 auto; }
-    .step-dot.active { background: #212529; color: white; }
-    .step-label { font-size: 11px; margin-top: 8px; font-weight: 600; color: #6c757d; }
-    .step-line { flex-grow: 1; height: 3px; background: #e9ecef; margin-bottom: 20px; transition: 0.3s; }
-    .step-line.active { background: #212529; }
+    .return-stepper {
+        align-items: center;
+        position: relative;
+    }
+
+    .step-dot {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+        font-size: 14px;
+        transition: 0.3s;
+        margin: 0 auto;
+    }
+
+    .step-dot.active {
+        background: #212529;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 11px;
+        margin-top: 8px;
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    .step-line {
+        flex-grow: 1;
+        height: 3px;
+        background: #e9ecef;
+        margin-bottom: 20px;
+        transition: 0.3s;
+    }
+
+    .step-line.active {
+        background: #212529;
+    }
 </style>
 
 <div class="container py-5">
@@ -36,104 +137,122 @@
         </a>
     </div>
 
-    @foreach (var order in Model.Orders)
+    @if (Model.Orders != null && Model.Orders.Any())
     {
-        <div class="order-card p-4">
-            <div class="row align-items-center">
-                <div class="col-lg-4 border-end">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="fw-bold text-primary mb-1">#@order.OrderNumber</h5>
-                            <p class="text-muted small">@order.OrderDate.ToString("dd MMM yyyy, hh:mm tt")</p>
-                        </div>
-                        <span class="badge @(order.Status?.ToUpper() == "DELIVERED" ? "bg-success" : "bg-warning") rounded-pill">
-                            @order.Status
-                        </span>
-                    </div>
-
-                    <div class="mt-4">
-                        @foreach (var item in order.OrderItems)
-                        {
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="product-icon me-3">
-                                    <i class="fas fa-box-open fa-lg"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="small fw-bold text-dark">@item.Product?.ProductName</div>
-                                    <div class="small text-muted">@item.Quantity × Rs.@(item.Product?.UnitPrice)</div>
-                                </div>
+        @foreach (var order in Model.Orders)
+        {
+            <div class="order-card p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-4 border-end">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1">#@order.OrderNumber</h5>
+                                <p class="text-muted small">@order.OrderDate.ToString("dd MMM yyyy, hh:mm tt")</p>
                             </div>
-                        }
-                    </div>
-
-                    <div class="pt-3 border-top mt-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Total Amount</span>
-                            <span class="fw-bold text-dark h5">Rs.@order.TotalAmount</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-8 ps-lg-5">
-                    @if (order.Status?.ToUpper() != "DELIVERED")
-                    {
-                        <div class="text-center mb-4">
-                            <span class="text-muted small"><i class="fas fa-truck me-1"></i> Live Tracking</span>
+                            <span class="badge @(order.Status?.ToUpper() == "DELIVERED" ? "bg-success" : "bg-warning") rounded-pill">
+                                @order.Status
+                            </span>
                         </div>
 
-                        {
-                            var deadline = order.EstimatedDeliveryAt ?? order.CreatedAt.AddHours(48);
-                            if (DateTime.Now < deadline)
+                        <div class="mt-4">
+                            @foreach (var item in order.OrderItems)
                             {
-                                <div class="text-center mb-4">
-                                    <div class="alert alert-info border-0 shadow-sm rounded-pill py-2 px-4 d-inline-block">
-                                        <i class="fas fa-hourglass-half me-2 text-primary"></i>
-                                        <span class="fw-bold me-2">Guaranteed Delivery In:</span>
-                                        <span id="timer-@order.OrderNumber" class="ticking-timer font-monospace text-danger fw-bold" data-deadline="@deadline.ToString("yyyy-MM-ddTHH:mm:ss")">Calculating...</span>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="product-icon me-3">
+                                        <i class="fas fa-box-open fa-lg"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark">@(item.Product?.ProductName ?? "Product Name N/A")</div>
+                                        <div class="small text-muted">@item.Quantity × Rs.@(item.Product?.UnitPrice ?? 0)</div>
                                     </div>
                                 </div>
                             }
-                        }
-
-                        <div class="stepper-wrapper">
-                            @{
-                                var phases = new[] { "PLACED", "PACKED", "RECEIVED_FOR_DELIVERY", "ON_THE_WAY", "DELIVERED" };
-                                var displayNames = new[] { "Placed", "Packed", "Dispatched", "On Way", "Delivered" };
-                                int currentStep = Array.IndexOf(phases, order.Status?.ToUpper() ?? "PLACED");
-                            }
-                            @for (int i = 0; i < phases.Length; i++)
-                            {
-                                <div class="stepper-item @(i <= currentStep ? "completed" : "")">
-                                    <div class="step-counter">@(i <= currentStep ? "✓" : (i + 1).ToString())</div>
-                                    <div class="step-name small">@displayNames[i]</div>
-                                </div>
-                            }
                         </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <div class="display-4 text-success mb-3"><i class="fas fa-check-circle"></i></div>
-                            <h4 class="fw-bold">Order Successfully Delivered!</h4>
-                            <p class="text-muted">Thank you for shopping with ISDN.</p>
 
-                            @{
-                                var deliveryTime = order.EstimatedDeliveryAt ?? order.OrderDate.AddHours(48);
-                                var hoursPassed = (DateTime.Now - deliveryTime).TotalHours;
-                                // Return valid for 72 hours
-                                if (hoursPassed <= 72 && hoursPassed >= 0)
+                        <div class="pt-3 border-top mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Total Amount</span>
+                                <span class="fw-bold text-dark h5">Rs.@order.TotalAmount</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8 ps-lg-5">
+                        @if (order.Status?.ToUpper() != "DELIVERED")
+                        {
+                            <div class="text-center mb-4">
+                                <span class="text-muted small"><i class="fas fa-truck me-1"></i> Live Tracking</span>
+                            </div>
+
+                            {
+                                var deadline = order.EstimatedDeliveryAt ?? order.OrderDate.AddHours(48);
+                                if (DateTime.Now < deadline)
                                 {
-                                    <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
-                                            onclick='openReturnModal("@order.OrderNumber", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>
-                                        <i class="fas fa-undo me-2"></i> Request Return
-                                    </button>
-                                    <div class="small text-danger mt-2">Return window: @(72 - (int)hoursPassed) hours left</div>
+                                    <div class="text-center mb-4">
+                                        <div class="alert alert-info border-0 shadow-sm rounded-pill py-2 px-4 d-inline-block">
+                                            <i class="fas fa-hourglass-half me-2 text-primary"></i>
+                                            <span class="fw-bold me-2">Guaranteed Delivery In:</span>
+                                            <span id="timer-@order.OrderNumber" class="ticking-timer font-monospace text-danger fw-bold" data-deadline="@deadline.ToString("yyyy-MM-ddTHH:mm:ss")">Calculating...</span>
+                                        </div>
+                                    </div>
                                 }
                             }
-                        </div>
-                    }
+
+                            <div class="stepper-wrapper">
+                                @{
+                                    var phases = new[] { "PLACED", "PACKED", "RECEIVED_FOR_DELIVERY", "ON_THE_WAY", "DELIVERED" };
+                                    var displayNames = new[] { "Placed", "Packed", "Dispatched", "On Way", "Delivered" };
+                                    int currentStep = Array.IndexOf(phases, order.Status?.ToUpper() ?? "PLACED");
+                                }
+                                @for (int i = 0; i < phases.Length; i++)
+                                {
+                                    <div class="stepper-item @(i <= currentStep ? "completed" : "")">
+                                        <div class="step-counter">@(i <= currentStep ? "✓" : (i + 1).ToString())</div>
+                                        <div class="step-name small">@displayNames[i]</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <div class="display-4 text-success mb-3"><i class="fas fa-check-circle"></i></div>
+                                <h4 class="fw-bold">Order Successfully Delivered!</h4>
+                                <p class="text-muted">Thank you for shopping with ISDN.</p>
+
+                                @{
+                                    var actualDelivery = order.Deliveries?
+                                        .Where(d => d.Status?.ToUpper() == "DELIVERED")
+                                        .OrderByDescending(d => d.DeliveryDate)
+                                        .FirstOrDefault();
+
+                                    var deliveryTime = actualDelivery?.DeliveryDate ?? order.EstimatedDeliveryAt ?? order.OrderDate;
+                                    var hoursPassed = (DateTime.Now - deliveryTime).TotalHours;
+
+                                    if (hoursPassed <= 72 && hoursPassed >= 0)
+                                    {
+                                        <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
+                                                onclick='openReturnModal("@order.OrderId", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>
+                                            <i class="fas fa-undo me-2"></i> Request Return
+                                        </button>
+                                        <div class="small text-danger mt-2">Return window: @(72 - (int)hoursPassed) hours left</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="small text-muted mt-2">Return window closed (@deliveryTime.ToString("dd MMM"))</div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <p class="text-muted">You haven't placed any orders yet.</p>
         </div>
     }
 
@@ -164,8 +283,8 @@
                                     </div>
                                     <div class="text-end">
                                         @{
-                                            var statusClass = ret.AdminStatus == "APPROVED" ? "bg-success" :
-                                                            ret.AdminStatus == "REJECTED" ? "bg-danger" : "bg-warning";
+                                            var statusClass = ret.AdminStatus?.ToUpper() == "APPROVED" ? "bg-success" :
+                                                              ret.AdminStatus?.ToUpper() == "REJECTED" ? "bg-danger" : "bg-warning";
                                         }
                                         <span class="badge @statusClass px-3 py-2 rounded-pill shadow-sm text-white">@ret.AdminStatus</span>
                                     </div>
@@ -213,27 +332,29 @@
                 <h5 class="modal-title"><i class="fas fa-undo me-2"></i> Return Request</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form asp-action="SubmitReturn" method="post">
+            <form asp-action="SubmitReturn" asp-controller="Order" method="post">
                 <div class="modal-body p-4">
                     <input type="hidden" name="orderId" id="modalOrderId" />
                     <label class="fw-bold mb-2">Select items to return:</label>
-                    <div id="modalItemsList" class="mb-4 border rounded p-2 bg-light"></div>
-                    
+                    <div id="modalItemsList" class="mb-4 border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;"></div>
+
                     <label class="fw-bold mb-2">Reason for Return</label>
                     <div class="mb-3">
-                        @if(Model.ReturnReasons != null) {
+                        @if (Model.ReturnReasons != null)
+                        {
                             int rIndex = 1;
-                            foreach (var reasonText in Model.ReturnReasons) {
+                            foreach (var reasonText in Model.ReturnReasons)
+                            {
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="radio" name="reasonId" value="@rIndex" required onclick="toggleComment(@rIndex)">
-                                    <label class="form-check-label">@reasonText</label>
+                                    <input class="form-check-input" type="radio" name="reasonId" value="@rIndex" id="reason_@rIndex" required onclick="toggleComment(@rIndex)">
+                                    <label class="form-check-label" for="reason_@rIndex">@reasonText</label>
                                 </div>
                                 rIndex++;
                             }
                         }
                     </div>
                     <div id="commentBox" class="d-none mt-3">
-                        <textarea name="comments" class="form-control" rows="3" placeholder="Explain further..."></textarea>
+                        <textarea name="comments" class="form-control" rows="3" placeholder="Please provide more details..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -246,8 +367,8 @@
 
 @section Scripts {
     <script>
-        function openReturnModal(orderNum, items) {
-            document.getElementById('modalOrderId').value = orderNum;
+        function openReturnModal(orderId, items) {
+            document.getElementById('modalOrderId').value = orderId;
             let listHtml = '';
             items.forEach(item => {
                 listHtml += `
@@ -260,33 +381,46 @@
                     </div>`;
             });
             document.getElementById('modalItemsList').innerHTML = listHtml;
-            new bootstrap.Modal(document.getElementById('returnModal')).show();
+            var myModal = new bootstrap.Modal(document.getElementById('returnModal'));
+            myModal.show();
         }
 
         function toggleComment(id) {
             const box = document.getElementById('commentBox');
-            if (id == 4) box.classList.remove('d-none');
-            else box.classList.add('d-none');
+            // Assuming the 4th option is "Other" or requires detail
+            if (id == 4) {
+                box.classList.remove('d-none');
+            } else {
+                box.classList.add('d-none');
+            }
         }
 
         function startTimers() {
             const timers = document.querySelectorAll('.ticking-timer');
+            if (timers.length === 0) return;
+
             setInterval(() => {
                 const now = new Date().getTime();
                 timers.forEach(timer => {
-                    const deadline = new Date(timer.getAttribute('data-deadline')).getTime();
+                    const deadlineAttr = timer.getAttribute('data-deadline');
+                    if (!deadlineAttr) return;
+
+                    const deadline = new Date(deadlineAttr).getTime();
                     const distance = deadline - now;
+                    
                     if (distance < 0) {
-                        timer.closest('.alert').style.display = 'none';
+                        const alertParent = timer.closest('.alert');
+                        if (alertParent) alertParent.style.display = 'none';
                     } else {
-                        const hours = Math.floor(distance / (3600000));
-                        const minutes = Math.floor((distance % 3600000) / 60000);
-                        const seconds = Math.floor((distance % 60000) / 1000);
+                        const hours = Math.floor(distance / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                         timer.innerHTML = `${hours}h ${minutes}m ${seconds}s`;
                     }
                 });
             }, 1000);
         }
+
         document.addEventListener('DOMContentLoaded', startTimers);
     </script>
 }
