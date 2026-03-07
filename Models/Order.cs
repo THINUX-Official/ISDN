@@ -45,7 +45,9 @@ namespace ISDN.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [Column("admin_status")]
+        // orders table in this database does not contain an 'admin_status' column in some deployments.
+        // Mark as not mapped to avoid EF Core selecting a non-existent column which causes MySQL errors.
+        [NotMapped]
         [MaxLength(50)]
         public string? AdminStatus { get; set; }
 
@@ -62,8 +64,12 @@ namespace ISDN.Models
         [Column("estimated_delivery_at")]
         public DateTime? EstimatedDeliveryAt { get; set; }
 
+        
+
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public virtual ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+        public virtual ICollection<OrderStatusLog> OrderStatusLogs { get; set; } = new List<OrderStatusLog>();
     }
 }

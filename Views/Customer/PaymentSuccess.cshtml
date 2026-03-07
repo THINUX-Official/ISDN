@@ -1,0 +1,252 @@
+﻿@model IEnumerable<ISDN.Models.CartItemViewModel>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Payment Success";
+
+    // කරත්තයේ ඇති බඩු වල මුළු එකතුව ගණනය කිරීම
+    var totalSum = Model?.Sum(i => i.Total) ?? 0;
+}
+
+<style>
+    :root {
+        --primary-blue: #1a237e;
+        --success-green: #27ae60;
+        --light-bg: #f8f9fa;
+        --dark-text: #2c3e50;
+    }
+
+    body {
+        background-color: #f0f2f5;
+    }
+
+    .invoice-wrapper {
+        max-width: 850px;
+        margin: 30px auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    .success-banner {
+        background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+
+    .status-icon {
+        width: 50px;
+        height: 50px;
+        background: white;
+        color: var(--success-green);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+        margin: 0 auto 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .invoice-body {
+        padding: 40px;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        border-bottom: 2px solid var(--light-bg);
+        padding-bottom: 15px;
+    }
+
+    .details-title {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #95a5a6;
+        text-transform: uppercase;
+    }
+
+    .info-text {
+        font-size: 0.95rem;
+        color: var(--dark-text);
+        font-weight: 600;
+    }
+
+    .order-summary-box {
+        background: var(--light-bg);
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    .total-amount {
+        font-size: 2rem;
+        color: #d32f2f;
+        font-weight: 800;
+    }
+
+    .btn-action {
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: none;
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
+        font-size: 0.85rem;
+    }
+
+    .btn-print {
+        background: #e9ecef;
+        color: var(--dark-text);
+    }
+
+    .btn-track {
+        background: var(--primary-blue);
+        color: white;
+    }
+
+    .btn-mail {
+        background: #00bcd4;
+        color: white;
+    }
+
+        .btn-track:hover, .btn-mail:hover {
+            opacity: 0.9;
+            color: white;
+        }
+
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .invoice-wrapper {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+    }
+</style>
+
+<div class="container mb-5">
+    <div class="invoice-wrapper">
+        @if (TempData["DbError"] != null)
+        {
+            <div class="alert alert-danger m-3">Database error: <pre style="white-space:pre-wrap;">@TempData["DbError"]</pre></div>
+        }
+        <div class="success-banner">
+            <div class="status-icon no-print"><i class="fas fa-check"></i></div>
+            <h2 class="font-weight-bold" style="font-size: 1.8rem;">Payment Successful!</h2>
+            <p class="mb-0 opacity-8 small">Your transaction of Rs. @totalSum.ToString("N2") was successful.</p>
+        </div>
+
+        <div class="invoice-body">
+            <div class="invoice-header">
+                <div>
+                    <div class="details-title">Order Reference</div>
+                    <div class="info-text">@((ViewBag.OrderNumber ?? ViewBag.OrderId) ?? "#")</div>
+                </div>
+                <div class="text-right">
+                    <div class="details-title">Generated Date</div>
+                    <div class="info-text">@DateTime.Now.ToString("dd MMM yyyy, hh:mm tt")</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-6">
+                    <h6 class="font-weight-bold mb-3" style="color: var(--primary-blue);">DELIVERY INFORMATION</h6>
+                    <div style="line-height: 1.6; font-size: 0.9rem;">
+                        <div class="text-muted small font-weight-bold">RECIPIENT</div>
+                        <div class="info-text mb-2">@ViewBag.CustomerName</div>
+
+                        <div class="text-muted small font-weight-bold">SHIPPING ADDRESS</div>
+                        <div class="info-text mb-2">@ViewBag.Address</div>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="order-summary-box">
+                        <h6 class="font-weight-bold mb-2 text-center" style="color: var(--primary-blue);">ORDER BREAKDOWN</h6>
+                        @if (Model != null)
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <div class="d-flex justify-content-between py-1 border-bottom">
+                                    <span class="text-muted" style="font-size: 0.8rem;">@item.ProductName (x@item.Quantity)</span>
+                                    <span class="font-weight-bold" style="font-size: 0.8rem;">Rs. @item.Total.ToString("N2")</span>
+                                </div>
+                            }
+                        }
+                        <div class="text-center mt-3">
+                            <div class="text-muted small font-weight-bold">TOTAL AMOUNT PAID</div>
+                            <div class="total-amount" style="font-size: 1.8rem;">Rs. @totalSum.ToString("N2")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="no-print mt-4 border-top pt-3 text-center">
+                <div class="d-flex justify-content-center flex-wrap" style="gap: 10px;">
+                    <button onclick="window.print()" class="btn btn-print btn-action">
+                        <i class="fas fa-print mr-2"></i> Print Invoice
+                    </button>
+
+                    <button onclick="sendEmailPopup()" class="btn btn-mail btn-action">
+                        <i class="fas fa-envelope mr-2"></i> Send to Mail
+                    </button>
+
+                    @* Track My Order Button with updated link *@
+                    <a href="/Orders/MyOrders" class="btn btn-track btn-action">
+                        <i class="fas fa-shipping-fast mr-2"></i> Track My Order
+                    </a>
+
+                    <a href="/" class="btn btn-outline-secondary btn-action">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* FontAwesome සහ SweetAlert2 අවශ්‍ය වේ *@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    function sendEmailPopup() {
+        Swal.fire({
+            title: 'Send Digital Bill',
+            input: 'email',
+            inputLabel: 'Recipient Email Address',
+            inputPlaceholder: 'customer@example.com',
+            showCancelButton: true,
+            confirmButtonText: 'Send Now',
+            confirmButtonColor: '#1a237e',
+            cancelButtonColor: '#d33',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing...',
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                setTimeout(() => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Invoice Sent!',
+                        text: 'Professional copy dispatched successfully to ' + result.value,
+                        timer: 3000
+                    });
+                }, 1500);
+            }
+        });
+    }
+</script>
