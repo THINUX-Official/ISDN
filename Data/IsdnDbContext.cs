@@ -38,7 +38,7 @@ namespace ISDN.Data
         public DbSet<ReturnReason> ReturnReasons { get; set; }
 
 
-      
+
 
 
         public DbSet<OrderReturn> OrderReturns { get; set; }
@@ -231,9 +231,9 @@ namespace ISDN.Data
 
             modelBuilder.Entity<Customer>()
         .Property(c => c.registration_status)
-        .HasConversion<string>(); // MySQL Enum එක string එකක් විදිහට map කරන්න
+        .HasConversion<string>(); 
 
-            // Boolean mapping (tinyint(1) mapping එක ස්ථිර කරන්න)
+            
             modelBuilder.Entity<Customer>()
                 .Property(c => c.IsActive)
                 .HasColumnType("tinyint(1)");
@@ -241,6 +241,27 @@ namespace ISDN.Data
             modelBuilder.Entity<User>()
                 .Property(u => u.IsActive)
                 .HasColumnType("tinyint(1)");
+
+
+           
+            modelBuilder.Entity<OrderStatusLog>(entity =>
+            {
+                entity.HasKey(e => e.StatusLogId);
+
+                entity.HasOne(d => d.Order)
+                      .WithMany(p => p.OrderStatusLogs)
+                      .HasForeignKey(d => d.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Explicitly ignore any auto-generated shadow properties
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+            });
+
+            modelBuilder.Entity<OrderStatusLog>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(log => log.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

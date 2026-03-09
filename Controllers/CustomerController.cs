@@ -1,16 +1,17 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using ISDN.Constants;
-using ISDN.Repositories;
 using ISDN.Data;
 using ISDN.Models;
-using Microsoft.EntityFrameworkCore;
-using ISDN_Distribution.Repositories;
+using ISDN.Repositories;
+using ISDN.ViewModels;
 using ISDN_Distribution.Models;
-using System.Net.Mail;
-using System.Net;
-using System.Text;
+using ISDN_Distribution.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
 
 namespace ISDN.Controllers
 {
@@ -108,6 +109,97 @@ namespace ISDN.Controllers
             return View(deliveries);
         }
 
+        // GET: /Customer/EditProfile
+        [HttpGet]
+        public async Task<IActionResult> EditProfile()
+        {
+            var userId = GetUserId();
+            if (userId == 0) return Unauthorized();
+
+            // Changed: user_id -> UserId
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+            if (customer == null) return NotFound();
+
+            // Changed: role -> Role (based on your Includes in other methods) and email -> Email
+            var hoEmails = await _context.Users
+                .Include(u => u.Role)
+                .Where(u => u.Role.RoleName == "HEAD_OFFICE")
+                .Select(u => u.Email)
+                .ToListAsync();
+
+            var model = new CustomerProfileViewModel
+            {
+                FirstName = customer.first_name, // Your model uses snake_case here
+                LastName = customer.last_name,
+                Email = customer.email,
+                PhoneNumber = customer.phone_number,
+                HeadOfficeEmails = hoEmails
+            };
+
+            return View(model);
+        }
+
+        // POST: /Customer/EditProfile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(CustomerProfileViewModel model)
+        {
+            var userId = GetUserId();
+            if (userId == 0) return Unauthorized();
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Changed: user_id -> UserId
+                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+                if (customer == null || user == null) return NotFound();
+
+                customer.first_name = model.FirstName;
+                customer.last_name = model.LastName;
+                customer.phone_number = model.PhoneNumber;
+
+                // Sync Email across both tables
+                // Changed: email -> Email, full_name -> FullName
+                customer.email = model.Email;
+                user.Email = model.Email;
+                user.FullName = $"{model.FirstName} {model.LastName}";
+
+                if (!string.IsNullOrEmpty(model.NewPassword))
+                {
+                    string newHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                    // Changed: password_hash -> PasswordHash
+                    customer.temp_password_hash = newHash;
+                    user.PasswordHash = newHash;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+                return RedirectToAction("Dashboard");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to update customer profile");
+                ModelState.AddModelError("", "An error occurred while saving your profile.");
+
+                // Changed: email -> Email
+                model.HeadOfficeEmails = await _context.Users
+                    .Include(u => u.Role)
+                    .Where(u => u.Role.RoleName == "HEAD_OFFICE")
+                    .Select(u => u.Email).ToListAsync();
+                return View(model);
+            }
+        }
+
+
+        /// <summary>
+        /// GET: /Customer/Invoices
+        /// View payment invoices
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Invoices()
         {

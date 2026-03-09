@@ -1,0 +1,144 @@
+﻿@model ISDN_Distribution.Models.LogisticsAcknowledgmentViewModel
+
+@{
+    ViewData["Title"] = "Acknowledge Packed Orders";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-clipboard-check"></i> Order Acknowledgment</h2>
+            <p class="text-muted">Verify orders packed by the RDC and accept them for delivery.</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="ackTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="pending-ack-tab" data-bs-toggle="tab" href="#pendingAck" role="tab">
+                Pending Acknowledgment 
+                <span class="badge bg-danger">@Model.PendingPackedOrders.Count</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="completed-ack-tab" data-bs-toggle="tab" href="#completedAck" role="tab">
+                Recently Acknowledged
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content p-4 border border-top-0 bg-white shadow-sm">
+        
+        <div class="tab-pane fade show active" id="pendingAck" role="tabpanel">
+            <h4 class="mb-3 text-warning">Waiting for Logistics Intake</h4>
+            @if (!Model.PendingPackedOrders.Any())
+            {
+                <div class="alert alert-info">There are no orders currently available for acknowledgment.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Packed Date</th>
+                                <th>Delivery Address</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.PendingPackedOrders)
+                            {
+                                <tr>
+                                    <td><strong>@order.OrderNumber</strong></td>
+                                    <td>@order.Customer?.first_name @order.Customer?.last_name</td>
+                                    <td>@order.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@order.DeliveryAddress</td>
+                                    <td class="text-center">
+                                        <form asp-controller="Logistics" asp-action="ProcessAcknowledgment" method="post" onsubmit="return confirm('Are you sure?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-check"></i> Acknowledge
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="tab-pane fade" id="completedAck" role="tabpanel">
+            <h4 class="mb-3 text-success">Acknowledged & Ready for Schedule</h4>
+            @if (!Model.RecentlyAcknowledgedOrders.Any())
+            {
+                <div class="alert alert-light border">No recently acknowledged orders found.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Updated Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.RecentlyAcknowledgedOrders)
+                            {
+                             <tr>
+    <td>@order.OrderNumber</td>
+    <td>@order.Customer?.first_name @order.Customer?.last_name</td>
+    <td>
+        <span class="badge bg-info text-dark">
+            <i class="fas fa-truck-loading"></i> @order.Status
+        </span>
+    </td>
+    <td>
+        @{
+            // Get the time from the latest log entry for this status
+            var lastLog = order.OrderStatusLogs
+                          .Where(l => l.Status == "RECEIVED_FOR_DELIVERY")
+                          .OrderByDescending(l => l.CreatedAt)
+                          .FirstOrDefault();
+            
+            var displayTime = lastLog != null ? lastLog.CreatedAt.ToString("HH:mm") : "N/A";
+        }
+        @displayTime
+    </td>
+</tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            <div class="mt-3">
+                <a asp-action="Schedule" class="btn btn-outline-success">
+                    <i class="fas fa-calendar-alt"></i> Go to Delivery Scheduling
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    
+        $(document).ready(function() {
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                localStorage.setItem('activeTab_Ack', $(e.target).attr('href'));
+            });
+            var activeTab = localStorage.getItem('activeTab_Ack');
+            if (activeTab) {
+                $('#ackTabs a[href="' + activeTab + '"]').tab('show');
+            }
+        });
+    </script>
+}
