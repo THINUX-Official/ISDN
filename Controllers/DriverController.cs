@@ -1,113 +1,98 @@
+using ISDN.Data;
+using ISDN.Models;
+using ISDN_Distribution.Repositories; // Ensure this matches your project
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ISDN.Constants;
-using ISDN.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
 
 namespace ISDN.Controllers
 {
-    /// <summary>
-    /// Driver Dashboard Controller
-    /// Views and updates only assigned deliveries with RDC-based filtering
-    /// </summary>
-    [Authorize(Roles = UserRoles.Driver)]
-    public class DriverController : BaseRdcController
+    [Authorize(AuthenticationSchemes = "CookieAuth")] 
+    public class DriverController : Controller
     {
         private readonly IsdnDbContext _context;
+        private readonly IOrderRepository _orderRepository;
 
-        public DriverController(IsdnDbContext context)
+        public DriverController(IsdnDbContext context, IOrderRepository orderRepository)
         {
             _context = context;
+            _orderRepository = orderRepository;
         }
 
-        [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            // Safely retrieve user ID from JWT claims
-            var driverId = GetUserId();
-            if (driverId == 0)
-            {
-                // Invalid or missing user_id claim - clear cookie and redirect to login
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Your session has expired. Please login again.";
-                return RedirectToAction("Login", "Account");
-            }
+            // Fetches the ID from the claim we just created in AccountController
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null) return RedirectToAction("Login", "Account");
 
-            // Validate that the driver's RDC ID claim exists
-            var driverRdcId = GetUserRdcId();
-            if (!driverRdcId.HasValue)
-            {
-                // Driver must have a valid RDC assignment - clear cookie
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Your account is not assigned to an RDC. Please contact the administrator.";
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            int currentDriverId = int.Parse(userIdClaim.Value);
 
-            try
-            {
-                // Get only deliveries assigned to this driver within their RDC
-                var myDeliveries = await _context.Deliveries
-                    .Include(d => d.Order)
-                        .ThenInclude(o => o.User)
-                    .Where(d => d.DriverId == driverId && d.RdcId == driverRdcId)
-                    .OrderByDescending(d => d.ScheduledDate)
-                    .ToListAsync();
+            // Get the driver's specific RDC from the database
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentDriverId);
+            if (currentUser == null) return NotFound();
 
-                // Calculate dashboard metrics
-                ViewBag.TodayDeliveries = myDeliveries.Count(d => d.ScheduledDate?.Date == DateTime.Today);
-                ViewBag.PendingDeliveries = myDeliveries.Count(d => d.Status == "Pending" || d.Status == "In Transit");
-                ViewBag.RdcId = driverRdcId;
+            int currentRdcId = currentUser.RdcId ?? 0;
 
-                return View(myDeliveries);
-            }
-            catch (Exception ex)
+            // Fetch ONLY the tasks assigned to THIS driver at THIS RDC
+            var allDeliveries = await _context.Deliveries
+                .Include(d => d.Order).ThenInclude(o => o.Customer)
+                .Where(d => d.DriverId == currentDriverId && d.RdcId == currentRdcId)
+                .ToListAsync();
+
+            var viewModel = new DriverDashboardViewModel
             {
-                // Log error, clear cookie, and redirect with friendly message
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Unable to load deliveries. Please try again or contact support.";
-                return RedirectToAction("Login", "Account");
-            }
+                ActiveDeliveries = allDeliveries.Where(d => d.Status.ToUpper() != "DELIVERED"),
+                CompletedDeliveries = allDeliveries.Where(d => d.Status.ToUpper() == "DELIVERED")
+                                        .OrderByDescending(d => d.DeliveryDate),
+
+                TodayCount = allDeliveries.Count(d => d.CreatedAt.Date == DateTime.Today),
+
+                // Fix: Added "IN TRANSIT" and "IN_TRANSIT" to match your database data
+                PendingCount = allDeliveries.Count(d =>
+                    d.Status.ToUpper() == "PENDING" ||
+                    d.Status.ToUpper() == "ON_THE_WAY" ||
+                    d.Status.ToUpper() == "IN TRANSIT" ||
+                    d.Status.ToUpper() == "IN_TRANSIT"),
+
+                CompletedTodayCount = allDeliveries.Count(d => d.Status.ToUpper() == "DELIVERED" && d.DeliveryDate?.Date == DateTime.Today)
+            };
+
+            return View(viewModel);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> MyDeliveries()
+        [HttpPost]
+        public async Task<IActionResult> MarkAsDelivered(int deliveryId)
         {
-            // Safely retrieve user ID from JWT claims
-            var driverId = GetUserId();
-            if (driverId == 0)
-            {
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Your session has expired. Please login again.";
-                return RedirectToAction("Login", "Account");
-            }
+            var delivery = await _context.Deliveries
+                .Include(d => d.Order)
+                .FirstOrDefaultAsync(d => d.DeliveryId == deliveryId);
 
-            // Validate that the driver's RDC ID claim exists
-            var driverRdcId = GetUserRdcId();
-            if (!driverRdcId.HasValue)
+            if (delivery != null && delivery.DriverId.HasValue)
             {
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Your account is not assigned to an RDC. Please contact the administrator.";
-                return RedirectToAction("AccessDenied", "Account");
-            }
+                delivery.Status = "DELIVERED";
+                delivery.DeliveryDate = DateTime.Now;
 
-            try
-            {
-                // Get only deliveries assigned to this driver within their RDC
-                var deliveries = await _context.Deliveries
-                    .Include(d => d.Order)
-                        .ThenInclude(o => o.User)
-                    .Where(d => d.DriverId == driverId && d.RdcId == driverRdcId)
-                    .ToListAsync();
+                if (delivery.Order != null)
+                {
+                    delivery.Order.Status = "DELIVERED";
+                }
 
-                ViewBag.RdcId = driverRdcId;
-                return View(deliveries);
+                // Fix: Use the actual driver ID from the delivery record to satisfy FK constraint
+                _context.OrderStatusLogs.Add(new OrderStatusLog
+                {
+                    OrderId = delivery.OrderId,
+                    Status = "DELIVERED",
+                    UpdatedById = delivery.DriverId.Value, // Use .Value instead of ?? 0
+                    CreatedAt = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
             }
-            catch (Exception ex)
-            {
-                Response.Cookies.Delete("AuthToken");
-                TempData["ErrorMessage"] = "Unable to load deliveries. Please try again or contact support.";
-                return RedirectToAction("Login", "Account");
-            }
+            return RedirectToAction("Dashboard");
         }
     }
 }

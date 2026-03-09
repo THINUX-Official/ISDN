@@ -23,9 +23,7 @@ namespace ISDN.Models
         [Column("quantity")]
         public int Quantity { get; set; }
 
-        [Column("unit_price")]
-        public decimal UnitPrice { get; set; }
-
+  
         [Column("subtotal")]
         public decimal Subtotal { get; set; }
 

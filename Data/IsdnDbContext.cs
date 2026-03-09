@@ -35,6 +35,15 @@ namespace ISDN.Data
         public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<Payment> Payments { get; set; }
 
+        public DbSet<ReturnReason> ReturnReasons { get; set; }
+
+
+
+
+
+        public DbSet<OrderReturn> OrderReturns { get; set; }
+        public DbSet<OrderStatusLog> OrderStatusLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -50,9 +59,7 @@ namespace ISDN.Data
                 .Property(o => o.TotalAmount)
                 .HasColumnType("decimal(10,2)");
 
-            modelBuilder.Entity<OrderItem>()
-                .Property(oi => oi.UnitPrice)
-                .HasColumnType("decimal(10,2)");
+            
 
             modelBuilder.Entity<OrderItem>()
                 .Property(oi => oi.Subtotal)
@@ -221,6 +228,40 @@ namespace ISDN.Data
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.Sku)
                 .IsUnique();
+
+            modelBuilder.Entity<Customer>()
+        .Property(c => c.registration_status)
+        .HasConversion<string>(); 
+
+            
+            modelBuilder.Entity<Customer>()
+                .Property(c => c.IsActive)
+                .HasColumnType("tinyint(1)");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.IsActive)
+                .HasColumnType("tinyint(1)");
+
+
+           
+            modelBuilder.Entity<OrderStatusLog>(entity =>
+            {
+                entity.HasKey(e => e.StatusLogId);
+
+                entity.HasOne(d => d.Order)
+                      .WithMany(p => p.OrderStatusLogs)
+                      .HasForeignKey(d => d.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Explicitly ignore any auto-generated shadow properties
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+            });
+
+            modelBuilder.Entity<OrderStatusLog>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(log => log.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

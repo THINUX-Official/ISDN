@@ -37,6 +37,9 @@ namespace ISDN.Models
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
 
+        [Column("product_image_url")]
+        public string? ProductImageUrl { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

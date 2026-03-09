@@ -6,6 +6,7 @@ using ISDN.Data;
 using ISDN.Models;
 using ISDN.Services;
 using ISDN.Repositories;
+using ISDN_Distribution.Repositories;
 using ISDN.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,16 +36,31 @@ builder.Services.AddDbContext<IsdnDbContext>(options =>
 options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21))));
 
 // Configure JWT Authentication
+// Configure Authentication to support both JWT and Cookies
 builder.Services.AddAuthentication(options =>
 {
+    // Default to JWT for APIs, but allow Cookies for MVC Dashboards
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = "CustomCookie"; // Redirect to login instead of 401
 })
-.AddJwtBearer(options =>
+.AddCookie("CustomCookie", options =>
 {
-    options.RequireHttpsMetadata = false; // Set to true in production
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromHours(2);
+})
+.AddCookie("CookieAuth", cookieOptions =>
+{
+    cookieOptions.LoginPath = "/Account/Login";
+    cookieOptions.AccessDeniedPath = "/Account/AccessDenied";
+    cookieOptions.Cookie.Name = "ISDN_Auth_Session";
+    cookieOptions.ExpireTimeSpan = TimeSpan.FromHours(2);
+})
+.AddJwtBearer(jwtOptions =>
+{
+    jwtOptions.RequireHttpsMetadata = false;
+    jwtOptions.SaveToken = true;
+    jwtOptions.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
@@ -56,8 +72,8 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // Read JWT from cookie for MVC views
-    options.Events = new JwtBearerEvents
+    // This handles reading the JWT from the cookie automatically
+    jwtOptions.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
@@ -65,7 +81,7 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
-});
+}); // THE ONLY SEMICOLON SHOULD BE HERE
 
 // Configure Authorization Policies for Role-Based Access Control
 builder.Services.AddAuthorization(options =>
@@ -88,6 +104,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IRdcOrderRepository, RdcOrderRepository>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // Add HttpContextAccessor for accessing HTTP context in services
 builder.Services.AddHttpContextAccessor();

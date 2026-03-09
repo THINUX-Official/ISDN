@@ -1,12 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+
 namespace ISDN.Models
 {
-    /// <summary>
-    /// Customer entity mapped to existing 'customers' table in MySQL
-    /// Separate from Users - customers have their own regional assignment
-    /// </summary>
     [Table("customers")]
     public class Customer
     {
@@ -18,30 +15,57 @@ namespace ISDN.Models
         public int? UserId { get; set; }
 
         [Required]
-        [Column("customer_name")]
-        [MaxLength(100)]
-        public string CustomerName { get; set; } = string.Empty;
+        [Column("first_name")]
+        [MaxLength(50)]
+        public string first_name { get; set; } = string.Empty;
+
+        [Required]
+        [Column("last_name")]
+        [MaxLength(50)]
+        public string last_name { get; set; } = string.Empty;
 
         [Column("email")]
         [MaxLength(100)]
-        public string? Email { get; set; }
+        public string? email { get; set; }
 
-        [Column("phone")]
+        [Column("phone_number")]
         [MaxLength(20)]
-        public string? Phone { get; set; }
+        public string? phone_number { get; set; }
 
-        [Column("address")]
+        [Column("business_name")]
+        [MaxLength(150)]
+        public string? business_name { get; set; }
+
+        [Column("street_address")]
         [MaxLength(255)]
-        public string? Address { get; set; }
+        public string? street_address { get; set; }
+
+        [Column("city")]
+        [MaxLength(100)]
+        public string? city { get; set; }
+
+        [Column("zip_code")]
+        [MaxLength(10)]
+        public string? zip_code { get; set; }
+
+        [Column("temp_password_hash")]
+        [MaxLength(255)]
+        public string? temp_password_hash { get; set; }
 
         [Column("rdc_id")]
         public int? RdcId { get; set; }
 
+        [Column("registration_status")] // MySQL Enum mapping
+        public string registration_status { get; set; } = "PENDING";
+
         [Column("is_active")]
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = false;
+
+        [Column("disapproved_at")]
+        public DateTime? DisapprovedAt { get; set; }
 
         [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation properties
         [ForeignKey("UserId")]

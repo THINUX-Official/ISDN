@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using ISDN.Data;
 using ISDN.Models;
 
+
+
 namespace ISDN.Repositories
 {
     public interface ICustomerRepository
@@ -42,25 +44,28 @@ namespace ISDN.Repositories
 
         public async Task<Customer?> GetByEmailAsync(string email)
         {
+            // මචං මෙතන පරණ 'Email' වෙනුවට අලුත් 'email' property එක දැම්මා
             return await _context.Customers
                 .Include(c => c.Rdc)
-                .FirstOrDefaultAsync(c => c.Email == email);
+                .FirstOrDefaultAsync(c => c.email == email);
         }
 
         public async Task<IEnumerable<Customer>> GetAllAsync()
         {
+            // 'CustomerName' වෙනුවට 'first_name' එකෙන් order කරනවා
             return await _context.Customers
                 .Include(c => c.Rdc)
-                .OrderBy(c => c.CustomerName)
+                .OrderBy(c => c.first_name)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Customer>> GetByRdcIdAsync(int rdcId)
         {
+            // 'CustomerName' වෙනුවට 'first_name' එකෙන් order කරනවා
             return await _context.Customers
                 .Include(c => c.Rdc)
                 .Where(c => c.RdcId == rdcId)
-                .OrderBy(c => c.CustomerName)
+                .OrderBy(c => c.first_name)
                 .ToListAsync();
         }
 

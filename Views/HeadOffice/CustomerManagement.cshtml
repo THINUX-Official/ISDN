@@ -1,0 +1,233 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<div class="container-fluid py-4">
+    <h2>Customer Management</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <ul class="nav nav-tabs mb-4" id="customerTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending (@ViewBag.PendingCustomers.Count)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active Customers</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="disapproved-tab" data-bs-toggle="tab" href="#disapproved" role="tab">Disapproved/Archive</a>
+        </li>
+    </ul>
+
+    <div class="card mb-4 bg-light shadow-sm">
+        <div class="card-body">
+            <form id="approvalForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="customerId" id="selectedId" />
+
+                <div class="row align-items-end">
+                    <div class="col-md-3"><label>Name:</label> <input type="text" id="dispName" class="form-control" readonly /></div>
+                    <div class="col-md-3"><label>Business:</label> <input type="text" id="dispBusiness" class="form-control" readonly /></div>
+                    <div class="col-md-3">
+                        <label class="text-danger fw-bold">Assigned RDC:</label>
+                        <select name="rdcId" id="rdcDropdown" class="form-control border-danger">
+                            <option value="">-- Select RDC --</option>
+                            @foreach (var rdc in ViewBag.Rdcs)
+                            {
+                                <option value="@rdc.RdcId">@rdc.RdcName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-success w-100 mb-1" onclick="submitForm('ApproveCustomer')">Approve</button>
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="submitForm('DisapproveCustomer')">Disapprove</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="tab-content" id="myTabContent">
+
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            <input type="text" id="searchPending" onkeyup="filterTable('pendingTable', 'searchPending')" class="form-control mb-3 shadow-sm border-primary" placeholder="Search Pending Businesses...">
+            <table class="table table-hover bg-white border">
+                <thead class="table-dark">
+                    <tr><th>Name</th><th>Business</th><th>City</th><th>Email</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in ViewBag.PendingCustomers)
+                    {
+                        <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name')" style="cursor:pointer">
+                            <td>@c.first_name @c.last_name</td>
+                            <td>@c.business_name</td>
+                            <td>@c.city</td>
+                            <td>@c.email</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="active" role="tabpanel">
+            <input type="text" id="searchActive" onkeyup="filterTable('activeTable', 'searchActive')" class="form-control mb-3 shadow-sm border-success" placeholder="Search Active Businesses...">
+
+            <table class="table table-hover bg-white border" id="activeTable">
+                <thead class="table-success">
+                    <tr><th>Name</th><th>Business</th><th>RDC Assigned</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in ViewBag.ActiveCustomers)
+                    {
+                        <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name', '@c.RdcId')" style="cursor:pointer">
+                            <td>@c.first_name @c.last_name</td>
+                            <td class="bus-name">@c.business_name</td>
+                            <td><span class="badge bg-info text-dark">RDC ID: @c.RdcId</span></td>
+                            <td><span class="badge bg-success">Active</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="openUpdateModal('@c.CustomerId', '@c.business_name', '@c.street_address', '@c.city', '@c.zip_code', '@c.RdcId')">Update</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="disapproved" role="tabpanel">
+            <input type="text" id="searchDisapproved" onkeyup="filterTable('disapprovedTable', 'searchDisapproved')" class="form-control mb-3 shadow-sm border-danger" placeholder="Search Disapproved Businesses...">
+            <table class="table table-hover bg-white border">
+                <thead class="table-danger">
+                    <tr><th>Name</th><th>Business</th><th>Disapproved Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in ViewBag.DisapprovedCustomers)
+                    {
+                        <tr>
+                            <td>@c.first_name @c.last_name</td>
+                            <td>@c.business_name</td>
+                            <td>@c.DisapprovedAt</td>
+                            <td>
+                                <form asp-action="PermanentDeleteCustomer" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="customerId" value="@c.CustomerId" />
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form asp-action="UpdateCustomerDetails" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header"><h5>Update Customer Details</h5></div>
+                    <div class="modal-body">
+                        <input type="hidden" name="customerId" id="modId" />
+                        <div class="mb-2"><label>Business Name</label><input type="text" name="businessName" id="modBus" class="form-control" /></div>
+                        <div class="mb-2"><label>Street Address</label><input type="text" name="streetAddress" id="modStreet" class="form-control" /></div>
+                        <div class="mb-2"><label>City</label><input type="text" name="city" id="modCity" class="form-control" /></div>
+                        <div class="mb-2"><label>Zip Code</label><input type="text" name="zipCode" id="modZip" class="form-control" /></div>
+                        <div class="mb-2">
+                            <label>Assigned RDC</label>
+                            <select name="rdcId" id="modRdc" class="form-control">
+                                @foreach (var rdc in ViewBag.Rdcs)
+                                {
+                                    <option value="@rdc.RdcId">@rdc.RdcName</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <script>
+        // 1. Existing populateForm - කිසිම වෙනසක් නැහැ, RdcId එක විතරක් add කළා
+        function populateForm(id, name, business, rdcId) {
+            document.getElementById('selectedId').value = id;
+            document.getElementById('dispName').value = name;
+            document.getElementById('dispBusiness').value = business;
+            if(rdcId) document.getElementById('rdcDropdown').value = rdcId;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 2. Modal එකට දත්ත පුරවන function එක
+        function openUpdateModal(id, bus, street, city, zip, rdc) {
+            document.getElementById('modId').value = id;
+            document.getElementById('modBus').value = bus;
+            document.getElementById('modStreet').value = street;
+            document.getElementById('modCity').value = city;
+            document.getElementById('modZip').value = zip;
+            document.getElementById('modRdc').value = rdc;
+            var myModal = new bootstrap.Modal(document.getElementById('updateModal'));
+            myModal.show();
+        }
+
+        // 3. Search Filter Logic
+        function filterTable(tableId, inputId) {
+            var input = document.getElementById(inputId).value.toUpperCase();
+            var rows = document.getElementById(tableId).getElementsByTagName("tr");
+            for (var i = 1; i < rows.Length; i++) {
+                var busCell = rows[i].querySelector(".bus-name");
+                if (busCell) {
+                    var text = busCell.textContent || busCell.innerText;
+                    rows[i].style.display = text.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        // 4. කලින් තිබුණ submitForm එක (කිසිම වෙනසක් නැහැ)
+        function submitForm(actionName) {
+            var customerId = document.getElementById('selectedId').value;
+            if (!customerId || customerId === "0") { alert("Select a customer!"); return; }
+            var form = document.getElementById('approvalForm');
+            form.action = '/HeadOffice/' + actionName;
+            form.submit();
+        }
+
+        function filterTable(tableId, inputId) {
+            var input = document.getElementById(inputId).value.toUpperCase();
+            var table = document.getElementById(tableId);
+            var tr = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < tr.length; i++) { // Header එක skip කරන්න i=1 ගත්තා
+                // හැම row එකකම "bus-name" class එක තියෙන cell එක හොයනවා
+                var td = tr[i].getElementsByClassName("bus-name")[0];
+
+                if (td) {
+                    var txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(input) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+}
