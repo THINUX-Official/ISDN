@@ -22,7 +22,11 @@ namespace ISDN_Distribution.Models
         public string Status { get; set; }
         public DateTime EstimatedDelivery { get; set; }
         public List<OrderItemDto> Items { get; set; }
-        public bool IsReturnable => Status == "Delivered" && (DateTime.Now - OrderDate).TotalHours <= 72;
+        public bool IsReturnable =>
+          !string.IsNullOrEmpty(Status) &&
+          Status.Equals("Delivered", StringComparison.OrdinalIgnoreCase) &&
+          (DateTime.Now - EstimatedDelivery).TotalHours <= 72 &&
+          (DateTime.Now - EstimatedDelivery).TotalHours >= 0;
     }
 
     public class OrderItemDto

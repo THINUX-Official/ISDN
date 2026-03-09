@@ -1,0 +1,430 @@
+@model ISDN.Models.SalesReportViewModel
+@{
+    ViewData["Title"] = "Sales Report";
+    string BadgeClass(string? status) => (status ?? "").ToUpper().Trim() switch {
+        "DELIVERED" => "delivered",
+        "COMPLETED" => "completed",
+        "PENDING"   => "pending",
+        "CANCELLED" => "cancelled",
+        _           => "completed"
+    };
+}
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sales Report</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --navy:#03045E;
+      --blue:#0077B6;
+      --cyan:#00B4D8;
+      --sky:#90E0EF;
+      --ice:#CAF0F8;
+      --text:#06102b;
+      --muted:#4b5563;
+      --card:#ffffff;
+      --radius:16px;
+      --shadow: 0 12px 30px rgba(3,4,94,.10);
+      --shadow-soft: 0 8px 22px rgba(3,4,94,.08);
+      --border: rgba(3,4,94,.10);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background: linear-gradient(180deg, var(--ice) 0%, #fff 35%, rgba(144,224,239,.35) 100%);
+      min-height: 100vh;
+    }
+
+    .wrap{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 16px 60px;
+    }
+
+    /* Header */
+    .page-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      padding: 22px 22px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(0,180,216,.18), rgba(0,119,182,.10));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 18px;
+    }
+    .title{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .logo-dot{
+      width:40px;height:40px;border-radius:12px;
+      background: radial-gradient(circle at 30% 30%, var(--cyan), var(--navy));
+      box-shadow: 0 10px 18px rgba(3,4,94,.18);
+      flex-shrink: 0;
+    }
+    h1{
+      margin:0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing:-0.02em;
+      color: var(--navy);
+    }
+    .sub{
+      margin-top:6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .head-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    /* Card */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* Filter card */
+    .filters{
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr 1.2fr 1.4fr;
+      gap:12px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    input, select{
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(3,4,94,.18);
+      padding: 0 12px;
+      outline: none;
+      background: rgba(202,240,248,.35);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+    }
+    input:focus, select:focus{
+      border-color: rgba(0,180,216,.85);
+      box-shadow: 0 0 0 4px rgba(0,180,216,.18);
+      background: #fff;
+    }
+    .filter-actions{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    /* Buttons */
+    .btn{
+      height:42px;
+      border-radius: 12px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 13px;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      transition: .15s ease;
+      text-decoration:none;
+      user-select:none;
+    }
+    .btn-primary{
+      background: var(--navy);
+      color:#fff;
+      box-shadow: 0 10px 18px rgba(3,4,94,.16);
+    }
+    .btn-primary:hover{ background: #0507a0; transform: translateY(-1px); }
+    .btn-outline{
+      background: #fff;
+      color: var(--navy);
+      border-color: rgba(3,4,94,.22);
+    }
+    .btn-outline:hover{
+      border-color: rgba(0,119,182,.6);
+      box-shadow: 0 10px 18px rgba(0,119,182,.10);
+      transform: translateY(-1px);
+    }
+
+    /* KPI row */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .kpi{
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: linear-gradient(180deg, rgba(202,240,248,.55), #fff);
+    }
+    .kpi .label{
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing:.06em;
+    }
+    .kpi .value{
+      margin-top:6px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+    }
+    .kpi .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .kpi-icon{
+      width:46px;height:46px;border-radius:14px;
+      display:grid;place-items:center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Table */
+    .table-card{ overflow:hidden; }
+    .table-head{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      background: rgba(144,224,239,.28);
+    }
+    .table-head h2{
+      margin:0;
+      font-size: 14px;
+      color: var(--navy);
+      letter-spacing:.01em;
+    }
+    .table-wrap{ overflow:auto; }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width: 600px;
+    }
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(144,224,239,.45);
+      color: var(--navy);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing:.06em;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align:left;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    tbody td{
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(3,4,94,.08);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    tbody tr:nth-child(odd){ background: rgba(202,240,248,.20); }
+    tbody tr:hover{ background: rgba(0,180,216,.10); }
+    .num{ text-align:right; font-variant-numeric: tabular-nums; }
+    .mono{ font-variant-numeric: tabular-nums; }
+
+    /* Badges */
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .dot{
+      width:7px; height:7px; border-radius:999px;
+      background: currentColor;
+      opacity:.9;
+      flex-shrink:0;
+    }
+    .delivered{ color: var(--blue); background: rgba(0,119,182,.12); border-color: rgba(0,119,182,.25); }
+    .completed{ color: var(--navy); background: rgba(144,224,239,.35); border-color: rgba(3,4,94,.18); }
+    .pending{ color: #055f73; background: rgba(0,180,216,.14); border-color: rgba(0,180,216,.28); }
+    .cancelled{ color: var(--navy); background: rgba(3,4,94,.08); border-color: rgba(3,4,94,.18); }
+
+    /* Empty state */
+    .empty{
+      text-align:center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @@media (max-width: 900px){
+      .page-head{ flex-direction:column; align-items:flex-start; }
+      .grid{ grid-template-columns: 1fr; }
+      .filter-actions{ justify-content:flex-start; }
+      .kpis{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="page-head">
+    <div>
+      <div class="title">
+        <div class="logo-dot"></div>
+        <div>
+          <h1>Sales Report</h1>
+          <div class="sub">Track orders by date range, export to CSV, and review status summary.</div>
+        </div>
+      </div>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn-outline" asp-controller="ManageDashboard" asp-action="Index">← Back Dashboard</a>
+      <a class="btn btn-outline"
+         asp-controller="ManageDashboard"
+         asp-action="ExportSalesReport"
+         asp-route-from="@Model.FromDate.ToString("yyyy-MM-dd")"
+         asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">⬇ Export CSV</a>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="card filters">
+    <form method="get" asp-controller="ManageDashboard" asp-action="SalesReport">
+      <div class="grid">
+        <div class="field">
+          <label for="from">From</label>
+          <input id="from" type="date" name="from" value="@Model.FromDate.ToString("yyyy-MM-dd")">
+        </div>
+        <div class="field">
+          <label for="to">To</label>
+          <input id="to" type="date" name="to" value="@Model.ToDate.ToString("yyyy-MM-dd")">
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary" type="submit">🔎 Filter</button>
+          <a class="btn btn-outline"
+             asp-controller="ManageDashboard"
+             asp-action="ExportSalesReport"
+             asp-route-from="@Model.FromDate.ToString("yyyy-MM-dd")"
+             asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">⬇ Export CSV</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="card kpi">
+      <div>
+        <div class="label">Total Sales</div>
+        <div class="value mono">LKR @Model.TotalRevenue.ToString("N2")</div>
+        <div class="hint">For selected date range</div>
+      </div>
+      <div class="kpi-icon" style="background:rgba(0,119,182,.12);border:1px solid rgba(0,119,182,.22);">💰</div>
+    </div>
+    <div class="card kpi">
+      <div>
+        <div class="label">Orders</div>
+        <div class="value mono">@Model.TotalOrders</div>
+        <div class="hint">Total orders found</div>
+      </div>
+      <div class="kpi-icon" style="background:rgba(0,180,216,.14);border:1px solid rgba(0,180,216,.22);">📦</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="card table-card">
+    <div class="table-head">
+      <h2>Orders</h2>
+      <div style="font-size:12px;color:var(--muted);">
+        Showing <b>@Model.TotalOrders</b> result@(Model.TotalOrders != 1 ? "s" : "")
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!Model.Orders.Any())
+          {
+            <tr>
+              <td colspan="4" class="empty">No orders found for the selected date range.</td>
+            </tr>
+          }
+          else
+          {
+            foreach (var o in Model.Orders)
+            {
+              <tr>
+                <td class="mono">#@o.OrderId</td>
+                <td class="mono">@o.OrderDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                  <span class="badge @BadgeClass(o.Status)">
+                    <span class="dot"></span>@(o.Status?.ToUpper())
+                  </span>
+                </td>
+                <td class="num mono">LKR @o.TotalAmount.ToString("N2")</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

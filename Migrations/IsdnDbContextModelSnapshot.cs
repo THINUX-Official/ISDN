@@ -68,7 +68,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("audit_logs");
+                    b.ToTable("audit_logs", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Customer", b =>
@@ -123,7 +123,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("customers");
+                    b.ToTable("customers", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Delivery", b =>
@@ -183,7 +183,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("RdcId");
 
-                    b.ToTable("deliveries");
+                    b.ToTable("deliveries", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Inventory", b =>
@@ -230,7 +230,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("RdcId");
 
-                    b.ToTable("inventory");
+                    b.ToTable("inventory", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.JwtToken", b =>
@@ -268,7 +268,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("jwt_tokens");
+                    b.ToTable("jwt_tokens", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Order", b =>
@@ -332,7 +332,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("orders");
+                    b.ToTable("orders", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.OrderItem", b =>
@@ -370,7 +370,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("order_items");
+                    b.ToTable("order_items", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Payment", b =>
@@ -424,7 +424,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("RdcId");
 
-                    b.ToTable("payments");
+                    b.ToTable("payments", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Permission", b =>
@@ -449,7 +449,7 @@ namespace ISDN.Migrations
 
                     b.HasKey("PermissionId");
 
-                    b.ToTable("permissions");
+                    b.ToTable("permissions", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Product", b =>
@@ -499,7 +499,7 @@ namespace ISDN.Migrations
                     b.HasIndex("Sku")
                         .IsUnique();
 
-                    b.ToTable("products");
+                    b.ToTable("products", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Rdc", b =>
@@ -543,7 +543,7 @@ namespace ISDN.Migrations
 
                     b.HasKey("RdcId");
 
-                    b.ToTable("rdcs");
+                    b.ToTable("rdcs", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.Role", b =>
@@ -572,7 +572,7 @@ namespace ISDN.Migrations
                     b.HasIndex("RoleName")
                         .IsUnique();
 
-                    b.ToTable("roles");
+                    b.ToTable("roles", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.RolePermission", b =>
@@ -598,7 +598,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("role_permissions");
+                    b.ToTable("role_permissions", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.User", b =>
@@ -661,7 +661,7 @@ namespace ISDN.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("users");
+                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("ISDN.Models.AuditLog", b =>

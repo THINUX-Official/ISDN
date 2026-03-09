@@ -106,9 +106,12 @@
         </div>
     </div>
 
-    <div class="mt-3">
+    <div class="mt-3 d-flex gap-2">
         <a asp-action="Dashboard" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <a asp-controller="ManageDashboard" asp-action="Index" class="btn btn-dark">
+            <i class="fas fa-chart-line"></i> Dashboard Manage &amp; Report Generator
         </a>
     </div>
 </div>
