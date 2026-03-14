@@ -31,13 +31,16 @@ namespace ISDN.Controllers
                 return View(vm);
             }
 
+            orderNumber = orderNumber.Trim();
+
             var orderQuery = _db.Orders.AsQueryable();
-            orderQuery = ApplyRdcFilter(orderQuery);
+            // orderQuery = ApplyRdcFilter(orderQuery); // allow tracking any order lifecycle to prevent "Order not found" if it belongs to another RDC or no RDC yet
 
             var order = await orderQuery
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
                 .Include(o => o.Deliveries)
+                .Include(o => o.OrderStatusLogs)
                 .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
 
             if (order == null) 
