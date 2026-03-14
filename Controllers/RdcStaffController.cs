@@ -32,11 +32,69 @@ namespace ISDN.Controllers
         }
 
         [HttpGet]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            ViewBag.RdcId = GetUserRdcId();
-            ViewBag.IsHeadOffice = IsHeadOfficeUser();
-            return View();
+            var rdcId = GetUserRdcId();
+            var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
+
+            try {
+
+                var availableInventory = await _context.Inventories
+                    .Where(i => i.RdcId == rdcId)
+                    .SumAsync(i => (int?)i.QuantityAvailable) ?? 0;
+
+                var monthlyOrders = await _context.Orders
+                    .Where(o => o.RdcId == rdcId &&
+                                o.CreatedAt >= startOfMonth &&
+                                o.CreatedAt < startOfNextMonth)
+                    .CountAsync();
+
+                var soldItems = await (
+                    from oi in _context.OrderItems
+                    join o in _context.Orders on oi.OrderId equals o.OrderId
+                    where o.RdcId == rdcId &&
+                          o.CreatedAt >= startOfMonth &&
+                          o.CreatedAt < startOfNextMonth
+                    select oi.Quantity
+                ).SumAsync();
+
+                var monthlySales = await _context.Orders
+                    .Where(o => o.RdcId == rdcId &&
+                                o.CreatedAt >= startOfMonth &&
+                                o.CreatedAt < startOfNextMonth)
+                    .SumAsync(o => (decimal?)o.TotalAmount) ?? 0m;
+
+                var returnValue = await (
+                    from r in _context.OrderReturns
+                    join oi in _context.OrderItems
+                        on new { r.OrderId, r.ProductId }
+                        equals new { oi.OrderId, oi.ProductId }
+                    join o in _context.Orders
+                        on r.OrderId equals o.OrderId
+                    where o.RdcId == rdcId &&
+                          o.CreatedAt >= startOfMonth &&
+                          o.CreatedAt < startOfNextMonth
+                    select (decimal)((oi.Subtotal / oi.Quantity) * r.Quantity)
+                ).SumAsync();
+
+                var monthlyRevenue = Math.Round(monthlySales - returnValue, 2);
+
+                ViewBag.AvailableInventory = availableInventory;
+                ViewBag.MonthlyOrders = monthlyOrders;
+                ViewBag.SoldItems = soldItems;
+                ViewBag.MonthlyRevenue = monthlyRevenue;
+
+                return View(); 
+
+            } catch (Exception ex) {
+
+                ViewBag.AvailableInventory = 0;
+                ViewBag.MonthlyOrders = 0;
+                ViewBag.SoldItems = 0;
+                ViewBag.MonthlyRevenue = 0;
+                return View();
+            }
         }
 
         [HttpGet]
