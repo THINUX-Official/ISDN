@@ -39,13 +39,13 @@ namespace ISDN.Helpers
         /// </summary>
         public static string GetValue(string formattedString, int index = 3)
         {
-            if (string.IsNullOrEmpty(formattedString)) return "N/A";
+            if (string.IsNullOrEmpty(formattedString)) return string.Empty;
 
             var parts = formattedString.Split('|');
 
             return (parts.Length > index && !string.IsNullOrWhiteSpace(parts[index]))
                 ? parts[index]
-                : "N/A";
+                : string.Empty;
         }
 
         public static string FormatBusinessName(string businessType, string userType, string businessName, string branchName)

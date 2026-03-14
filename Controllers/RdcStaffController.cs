@@ -32,11 +32,116 @@ namespace ISDN.Controllers
         }
 
         [HttpGet]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
+        {
+            var rdcId = GetUserRdcId();
+            var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
+
+            try {
+
+                var availableInventory = await _context.Inventories
+                    .Where(i => i.RdcId == rdcId)
+                    .SumAsync(i => (int?)i.QuantityAvailable) ?? 0;
+
+                var monthlyOrders = await _context.Orders
+                    .Where(o => o.RdcId == rdcId &&
+                                o.CreatedAt >= startOfMonth &&
+                                o.CreatedAt < startOfNextMonth)
+                    .CountAsync();
+
+                var soldItems = await (
+                    from oi in _context.OrderItems
+                    join o in _context.Orders on oi.OrderId equals o.OrderId
+                    where o.RdcId == rdcId &&
+                          o.CreatedAt >= startOfMonth &&
+                          o.CreatedAt < startOfNextMonth
+                    select oi.Quantity
+                ).SumAsync();
+
+                var monthlySales = await _context.Orders
+                    .Where(o => o.RdcId == rdcId &&
+                                o.CreatedAt >= startOfMonth &&
+                                o.CreatedAt < startOfNextMonth)
+                    .SumAsync(o => (decimal?)o.TotalAmount) ?? 0m;
+
+                var returnValue = await (
+                    from r in _context.OrderReturns
+                    join oi in _context.OrderItems
+                        on new { r.OrderId, r.ProductId }
+                        equals new { oi.OrderId, oi.ProductId }
+                    join o in _context.Orders
+                        on r.OrderId equals o.OrderId
+                    where o.RdcId == rdcId &&
+                          o.CreatedAt >= startOfMonth &&
+                          o.CreatedAt < startOfNextMonth
+                    select (decimal)((oi.Subtotal / oi.Quantity) * r.Quantity)
+                ).SumAsync();
+
+                var monthlyRevenue = Math.Round(monthlySales - returnValue, 2);
+
+                ViewBag.AvailableInventory = availableInventory;
+                ViewBag.MonthlyOrders = monthlyOrders;
+                ViewBag.SoldItems = soldItems;
+                ViewBag.MonthlyRevenue = monthlyRevenue;
+
+                return View(); 
+
+            } catch (Exception ex) {
+
+                ViewBag.AvailableInventory = 0;
+                ViewBag.MonthlyOrders = 0;
+                ViewBag.SoldItems = 0;
+                ViewBag.MonthlyRevenue = 0;
+                return View();
+            }
+        }
+
+        [HttpGet]
+        public IActionResult OrderLifeCycles()
         {
             ViewBag.RdcId = GetUserRdcId();
-            ViewBag.IsHeadOffice = IsHeadOfficeUser();
             return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOrderLifecycles()
+        {
+            var rdcId = GetUserRdcId();
+            if (!rdcId.HasValue) return Json(new { success = false, message = "RDC not found" });
+
+            var orders = await _context.Orders
+                .Include(o => o.OrderStatusLogs)
+                .Where(o => o.RdcId == rdcId.Value)
+                .OrderByDescending(o => o.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+
+            var result = orders.Select(o => new {
+                orderId = o.OrderId,
+                orderNumber = o.OrderNumber,
+                currentStatus = o.Status,
+                canonicalState = MapToCanonicalState(o.Status),
+                createdAt = o.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                lifecycle = o.OrderStatusLogs.OrderBy(l => l.CreatedAt).Select(l => new {
+                    status = l.Status,
+                    canonicalState = MapToCanonicalState(l.Status),
+                    timestamp = l.CreatedAt.ToString("MM/dd HH:mm")
+                }).ToList()
+            }).ToList();
+
+            return Json(new { success = true, data = result });
+        }
+
+        private string MapToCanonicalState(string rawStatus)
+        {
+            var s = rawStatus?.ToUpper() ?? "";
+            if (s == "PENDING" || s == "NEW") return "PENDING";
+            if (s.Contains("PROCESS") || s.Contains("RESERV") || s.Contains("ACKNOWLEDGE") || s == "PACKED") return "PROCESSING";
+            if (s.Contains("SHIP") || s.Contains("ON_THE_WAY") || s.Contains("DISPATCH")) return "SHIPPED";
+            if (s.Contains("DELIVER") || s.Contains("COMPLETE")) return "DELIVERED";
+            if (s.Contains("CANCEL") || s.Contains("REJECT") || s.Contains("FAIL") || s.Contains("RETURN")) return "CANCELLED/RETURNED";
+            return "UNKNOWN";
         }
 
         [HttpGet]

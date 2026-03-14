@@ -9,6 +9,7 @@ namespace ISDN_Distribution.Repositories
         // Method දෙකම එකතු කරමු එවිට පරණ Controller errors මැකී යනු ඇත
         Task<CustomerOrdersViewModel> GetCustomerOrdersAsync(int userId);
         Task<CustomerOrdersViewModel> GetByUserIdAsync(int userId);
+        Task<CustomerOrdersViewModel> GetClusterOrdersAsync(int userId, int? branchId = null, string? businessType = null);
 
         Task<List<Delivery>> GetDriverTasksAsync(int driverId, int rdcId);
 

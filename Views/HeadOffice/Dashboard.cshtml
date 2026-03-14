@@ -17,7 +17,7 @@
             <div class="card text-center border-warning">
                 <div class="card-body">
                     <i class="fas fa-users fa-3x text-warning mb-3"></i>
-                    <h3>2</h3>
+                    <h3>@ViewBag.ActiveCustomerCount</h3>
                     <p class="text-muted">Active Customers</p>
                 </div>
             </div>
@@ -26,7 +26,7 @@
             <div class="card text-center border-info">
                 <div class="card-body">
                     <i class="fas fa-boxes fa-3x text-info mb-3"></i>
-                    <h3>8</h3>
+                    <h3>@ViewBag.CurrentMonthOrderCount</h3>
                     <p class="text-muted">Monthly Orders</p>
                 </div>
             </div>
@@ -35,7 +35,7 @@
             <div class="card text-center border-primary">
                 <div class="card-body">
                     <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
-                    <h3>432</h3>
+                    <h3>@ViewBag.CurrentMonthSoldItemCount</h3>
                     <p class="text-muted">Sold Items</p>
                 </div>
             </div>
@@ -44,7 +44,7 @@
             <div class="card text-center border-success">
                 <div class="card-body">
                     <i class="fas fa-dollar-sign fa-3x text-success mb-3"></i>
-                    <h3>244700.00</h3>
+                    <h3>@ViewBag.CurrentMonthRevenue.ToString("F2")</h3>
                     <p class="text-muted">Monthly Revenue</p>
                 </div>
             </div>

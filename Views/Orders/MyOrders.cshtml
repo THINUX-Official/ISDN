@@ -132,9 +132,48 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-dark mb-0"><i class="fas fa-shopping-bag me-2"></i> My Order History</h3>
-        <a href="#returnTrackingSection" class="btn btn-dark rounded-pill px-4 shadow-sm">
+        <div class="d-flex align-items-center">
+            @if (ViewBag.ClusterBranches != null)
+            {
+                <form method="get" asp-action="MyOrders" class="d-flex align-items-center me-3">
+                    @if (ViewBag.BusinessTypes != null && ((IEnumerable<string>)ViewBag.BusinessTypes).Any())
+                    {
+                        <select name="businessType" class="form-select me-2 form-select-sm">
+                            <option value="">All Business Types</option>
+                        @foreach(var bt in (IEnumerable<string>)ViewBag.BusinessTypes)
+                        {
+                            if ((ViewBag.SelectedBusinessType as string) == bt)
+                            {
+                                <option value="@bt" selected="selected">@bt</option>
+                            }
+                            else
+                            {
+                                <option value="@bt">@bt</option>
+                            }
+                        }
+                        </select>
+                    }
+                    <select name="branchId" class="form-select me-2 form-select-sm">
+                        <option value="">All Branches</option>
+                        @foreach(var b in (IEnumerable<dynamic>)ViewBag.ClusterBranches)
+                        {
+                            if (ViewBag.SelectedBranchId != null && (int)ViewBag.SelectedBranchId == (int)b.CustomerId)
+                            {
+                                <option value="@b.CustomerId" selected="selected">@b.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@b.CustomerId">@b.Name</option>
+                            }
+                        }
+                    </select>
+                    <button class="btn btn-primary btn-sm">Filter</button>
+                </form>
+            }
+            <a href="#returnTrackingSection" class="btn btn-dark rounded-pill px-4 shadow-sm">
             <i class="fas fa-truck-loading me-2"></i> Track My Returns
         </a>
+        </div>
     </div>
 
     @if (Model.Orders != null && Model.Orders.Any())
@@ -221,26 +260,32 @@
                                 <p class="text-muted">Thank you for shopping with ISDN.</p>
 
                                 @{
-                                    var actualDelivery = order.Deliveries?
-                                        .Where(d => d.Status?.ToUpper() == "DELIVERED")
-                                        .OrderByDescending(d => d.DeliveryDate)
-                                        .FirstOrDefault();
+                            var actualDelivery = order.Deliveries?
+                                .Where(d => (d.Status ?? string.Empty).ToUpper() == "DELIVERED")
+                                .OrderByDescending(d => d.DeliveryDate)
+                                .FirstOrDefault();
 
-                                    var deliveryTime = actualDelivery?.DeliveryDate ?? order.EstimatedDeliveryAt ?? order.OrderDate;
-                                    var hoursPassed = (DateTime.Now - deliveryTime).TotalHours;
+                            // Determine the actual delivery timestamp (prefer delivery record, then estimated, then order date)
+                            var deliveryTime = actualDelivery?.DeliveryDate ?? order.EstimatedDeliveryAt ?? order.OrderDate;
 
-                                    if (hoursPassed <= 72 && hoursPassed >= 0)
-                                    {
-                                        <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
-                                                onclick='openReturnModal("@order.OrderId", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>
-                                            <i class="fas fa-undo me-2"></i> Request Return
-                                        </button>
-                                        <div class="small text-danger mt-2">Return window: @(72 - (int)hoursPassed) hours left</div>
-                                    }
-                                    else
-                                    {
-                                        <div class="small text-muted mt-2">Return window closed (@deliveryTime.ToString("dd MMM"))</div>
-                                    }
+                            // Normalize to UTC because stored dates are UTC in the DB
+                            var deliveryUtc = DateTime.SpecifyKind(deliveryTime, DateTimeKind.Utc);
+                            var nowUtc = DateTime.UtcNow;
+                            var hoursPassed = (nowUtc - deliveryUtc).TotalHours;
+                            var remainingHours = 72 - (int)Math.Floor(hoursPassed);
+
+                            if (hoursPassed >= 0 && hoursPassed <= 72)
+                            {
+                                <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
+                                        onclick='openReturnModal("@order.OrderId", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>
+                                    <i class="fas fa-undo me-2"></i> Request Return
+                                </button>
+                                <div class="small text-danger mt-2">Return window: @remainingHours hours left</div>
+                            }
+                            else
+                            {
+                                <div class="small text-muted mt-2">Return window closed (@(deliveryUtc.ToLocalTime().ToString("dd MMM")))</div>
+                            }
                                 }
                             </div>
                         }

@@ -78,7 +78,7 @@
                             <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name')" style="cursor:pointer">
                                 <td>@c.first_name @c.last_name</td>
                                 <td class="bus-name">
-                                    @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)
+                                    @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 3)
                                 </td>
                                 <td>@c.city</td>
                                 <td>@c.email</td>
@@ -104,7 +104,7 @@
                             <td>@c.first_name @c.last_name</td>
 
                             <td class="bus-name">
-                                @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)
+                                @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 3)
                             </td>
 
                             <td><span class="badge bg-info text-dark">RDC ID: @c.RdcId</span></td>
@@ -134,7 +134,7 @@
                     {
                         <tr>
                             <td>@c.first_name @c.last_name</td>
-                            <td class="bus-name">@ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)</td>
+                        <td class="bus-name">@ISDN.Helpers.AuthHelper.GetValue(c.business_name, 3)</td>
                             <td>@c.DisapprovedAt</td>
                             <td>
                                 <form asp-action="PermanentDeleteCustomer" method="post">
@@ -186,25 +186,24 @@
     <script>
         // 1. Existing populateForm - කිසිම වෙනසක් නැහැ, RdcId එක විතරක් add කළා
               // Add this helper inside your <script> tag
-              function formatBusinessNameForDisplay(rawString) {
+        function formatBusinessNameForDisplay(rawString) {
             if (!rawString) return "N/A";
 
-            // Format: |Type|UserType|BusinessName|BranchName
+            // Format: |BusinessType|UserType|BusinessName|BranchName
+            // We want to display the BusinessName which is at index 3 when splitting by '|'
             var parts = rawString.split('|');
 
-            // Index 2 is often the Business Type, Index 3 is the Business Name
-            // Adjust this index based on exactly how your AuthHelper.GetValue is mapped
-            return (parts.length > 3) ? parts[2] : rawString;
+            return (parts.length > 3 && parts[3].trim() !== "") ? parts[3] : "N/A";
         }
 
         function populateForm(id, name, business, rdcId) {
             document.getElementById('selectedId').value = id;
             document.getElementById('dispName').value = name;
 
-            // Use the helper to clean the string before putting it in the input
+            // Ensure we extract and show the BusinessName (index 3 in the stored format)
             document.getElementById('dispBusiness').value = formatBusinessNameForDisplay(business);
 
-            if(rdcId) document.getElementById('rdcDropdown').value = rdcId;
+            if (rdcId) document.getElementById('rdcDropdown').value = rdcId;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 

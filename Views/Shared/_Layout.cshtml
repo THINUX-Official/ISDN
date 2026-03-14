@@ -98,7 +98,23 @@
                                 <small class="text-muted">Owns several business types, each with multiple branches.</small>
                             </label>
                         </div>
-                        <button class="btn w-100 text-white mt-3" style="background: #667eea;" onclick="goToRegister()">Continue to Registration</button>
+                        
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input ms-0" type="radio" name="userType" id="type4" value="BranchManager">
+                            <label class="form-check-label ms-2" for="type4">
+                                <strong>Branch Manager</strong><br />
+                                <small class="text-muted">I manage a branch and have an invitation code from my owner.</small>
+                            </label>
+                        </div>
+
+                        <button class="btn w-100 text-white mt-3" style="background: #667eea;" onclick="goToNextStep()">Continue</button>
+                    </div>
+
+                    <div id="codeStep" class="d-none">
+                        <label class="form-label fw-bold">Enter Business Invitation Code</label>
+                        <input type="text" id="invitationCodeInput" class="form-control mb-3" placeholder="e.g., SBO_123 or PBO_ABC">
+                        <p id="codeError" class="text-danger small d-none">Please enter a valid code.</p>
+                        <button class="btn w-100 text-white" style="background: #10b981;" onclick="goToRegisterBM()">Proceed to Registration</button>
                     </div>
                 </div>
             </div>
@@ -115,8 +131,11 @@
         regModal.addEventListener('hidden.bs.modal', function () {
             document.getElementById('nicStep').classList.remove('d-none');
             document.getElementById('typeStep').classList.add('d-none');
+            document.getElementById('codeStep').classList.add('d-none');
             document.getElementById('nicInput').value = '';
+            document.getElementById('invitationCodeInput').value = '';
             document.getElementById('nicError').classList.add('d-none');
+            document.getElementById('codeError').classList.add('d-none');
             document.getElementById('modalTitle').innerText = "Identity Verification";
         });
 
@@ -134,15 +153,34 @@
             }
         }
 
-               function goToRegister() {
+        function goToNextStep() {
             const selected = document.querySelector('input[name="userType"]:checked').value;
-            const nic = document.getElementById('nicInput').value.trim();
 
-            const url = '@Url.Action("StartRegistration", "Account")' + 
-                        '?userType=' + encodeURIComponent(selected) + 
-                        '&nic=' + encodeURIComponent(nic);
+            if (selected === "BranchManager") {
+                document.getElementById('typeStep').classList.add('d-none');
+                document.getElementById('codeStep').classList.remove('d-none');
+                document.getElementById('modalTitle').innerText = "Enter Invitation Code";
+            }
+            else if (selected === "PBOSingle") {
+                window.location.href = '@Url.Action("RegisterPBOSingle", "Account")';
+            }
+            else if (selected === "PBOMulti") {
+                window.location.href = '@Url.Action("RegisterPBOMulti", "Account")';
+            }
+            else {
+                // Fallback for single business owner
+                window.location.href = '@Url.Action("Register", "Account")';
+            }
+        }
 
-            window.location.href = url;
+        function goToRegisterBM() {
+            const code = document.getElementById('invitationCodeInput').value.trim();
+            if(!code) {
+                document.getElementById('codeError').classList.remove('d-none');
+                return;
+            }
+            // Navigate to RegisterBM, passing the code as query param
+            window.location.href = '@Url.Action("RegisterBM", "Account")?code=' + encodeURIComponent(code);
         }
     </script>
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ISDN.Data;
 using ISDN.Models;
+using ISDN.Constants;
 using BCrypt.Net;
 
 namespace ISDN.Services
@@ -67,6 +68,49 @@ namespace ISDN.Services
                 var user = await _context.Users
                     .Include(u => u.Role)
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.IsActive);
+
+                // If user exists, ensure they are linked to at least one active branch for customer-type roles only.
+                if (user != null)
+                {
+                    var roleName = user.Role?.RoleName ?? string.Empty;
+                    // Skip this active-branch requirement for internal roles (first seven roles) and Head Office
+                    var internalRoles = new[]
+                    {
+                        UserRoles.Admin,
+                        UserRoles.HeadOffice,
+                        UserRoles.RdcStaff,
+                        UserRoles.Logistics,
+                        UserRoles.Driver,
+                        UserRoles.Finance,
+                        UserRoles.SalesRep
+                    };
+
+                    if (!internalRoles.Any(r => string.Equals(r, roleName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // For customer-linked accounts we only enforce the active-branch requirement for PBOS/PBOM user types.
+                        var linkedCustomers = await _context.Customers.Where(c => c.UserId == user.UserId).ToListAsync();
+
+                        // If any linked customer is SBO, skip the active-branch check (SBOs have single main branch)
+                        // UserType is stored at index 2 in the formatted business_name string
+                        bool hasSbo = linkedCustomers.Any(c =>
+                            string.Equals(ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2), "SBO", StringComparison.OrdinalIgnoreCase));
+
+                        if (!hasSbo)
+                        {
+                            // Check for any active PBOS/PBOM branch
+                            bool hasActivePbosPbom = linkedCustomers.Any(c => c.IsActive &&
+                                (string.Equals(ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2), "PBOS", StringComparison.OrdinalIgnoreCase)
+                                 || string.Equals(ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2), "PBOM", StringComparison.OrdinalIgnoreCase)));
+
+                            if (!hasActivePbosPbom)
+                            {
+                                await _auditLogService.LogActionAsync(user.UserId, "LOGIN_BLOCKED_INACTIVE_BRANCH", "User", user.UserId,
+                                    "Login blocked: user has no active PBOS/PBOM branches.", ipAddress);
+                                return (false, string.Empty, null, "Your account is currently suspended. Contact support.");
+                            }
+                        }
+                    }
+                }
 
                 if (user == null)
                 {
