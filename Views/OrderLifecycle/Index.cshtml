@@ -1,0 +1,77 @@
+@model ISDN.ViewModels.OrderLifecycleViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Order Lifecycle Tracker";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title">Order Lifecycle Tracker</h3>
+            <form id="searchForm" method="get" class="mb-3 d-flex">
+                <input name="orderNumber" type="text" class="form-control me-2" placeholder="Enter Order Number (e.g. ORD-12345)" value="@Model.OrderNumber" />
+                <button class="btn btn-primary">Search</button>
+            </form>
+            @if (ViewData.ModelState.ErrorCount > 0)
+            {
+                <div class="alert alert-danger">
+                    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                </div>
+            }
+
+            <div class="mb-3">
+                <div class="progress" style="height:14px;">
+                    <div id="lifecycleProgress" class="progress-bar" role="progressbar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <ul class="list-unstyled">
+                    @for (int i = 0; i < Model.Milestones.Count; i++)
+                    {
+                        var m = Model.Milestones[i];
+                        var color = m.Status == "Completed" ? "success" : (m.Status == "InProgress" ? "primary" : (m.Status == "Issue" ? "danger" : "secondary"));
+                        <li class="d-flex mb-3">
+                            <div class="me-3">
+                                <i class="fas @m.Icon text-@color fa-2x" style="width:36px;text-align:center;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>@m.Name</strong>
+                                        <div class="text-muted small">@m.Description</div>
+                                    </div>
+                                    <div class="text-end small text-muted">
+                                        @m.Timestamp?.ToString("dd MMM yyyy, hh:mm tt")
+                                    </div>
+                                </div>
+
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#details@i">Details</button>
+                                    <div class="collapse mt-2" id="details@i">
+                                        <div class="card card-body small">
+                                            @Html.Raw(m.DetailsHtml ?? "<em>No additional details</em>")
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        const milestones = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Milestones.Select(m=>new { m.Status })) ) ;
+        const total = milestones.length;
+        const completed = milestones.filter(m=>m.Status=="Completed").length;
+        const percent = total ? Math.round((completed/total)*100) : 0;
+        document.getElementById('lifecycleProgress').style.width = percent + '%';
+        document.getElementById('lifecycleProgress').innerText = percent + '%';
+    })();
+</script>

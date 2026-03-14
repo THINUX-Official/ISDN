@@ -1,0 +1,267 @@
+﻿@model ISDN.ViewModels.RegisterPBOSingleViewModel
+@{
+    ViewData["Title"] = "Multi-Branch Registration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header text-center">
+                <h1 class="auth-title">Primary Owner Registration</h1>
+                <p class="auth-subtitle">Register your business and all its branch locations</p>
+            </div>
+
+            <form asp-action="RegisterPBOSingle" method="post" id="pboForm" class="auth-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <h5 class="section-divider"><span>Owner Information</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FirstName" class="form-label-custom"></label>
+                        <input asp-for="FirstName" class="form-input-custom" placeholder="John" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="LastName" class="form-label-custom"></label>
+                        <input asp-for="LastName" class="form-input-custom" placeholder="Doe" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label-custom"></label>
+                        <input asp-for="Email" class="form-input-custom" type="email" placeholder="you@company.com" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PhoneNumber" class="form-label-custom"></label>
+                        <input asp-for="PhoneNumber" class="form-input-custom" placeholder="0771234567" required />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BusinessName" class="form-label-custom"></label>
+                    <input asp-for="BusinessName" class="form-input-custom" placeholder="Global Enterprises PVT LTD" required />
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BusinessType" class="form-label-custom">Business Type</label>
+                    <input asp-for="BusinessType" class="form-input-custom" placeholder="e.g. Supermarket, Restaurant" required />
+                </div>
+
+                <h5 class="section-divider"><span>Branch Locations</span></h5>
+                <div class="info-note-turquoise mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <span>We assume you have more than one branch. Make sure to add the correct unique name for each branch if they differ, or repeat the main business name as branch name if they are all the same. Please enter at least two branches. The owner contact info will apply to all branches.</span>
+                </div>
+
+                <div class="table-responsive mb-2">
+                    <table class="table table-bordered align-middle" id="branchTable">
+                        <thead class="table-light">
+                            <tr style="font-size: 0.85rem; color: #555;">
+                                <th>Branch Name</th>
+                                <th>Street Address</th>
+                                <th>City</th>
+                                <th>Zip Code</th>
+                                <th width="40"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="branchBody">
+                            <tr>
+                                <td><input name="Branches[0].BranchName" class="form-input-custom py-1" required /></td>
+                                <td><input name="Branches[0].StreetAddress" class="form-input-custom py-1" required /></td>
+                                <td><input name="Branches[0].City" class="form-input-custom py-1" required /></td>
+                                <td><input name="Branches[0].ZipCode" class="form-input-custom py-1" required /></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mb-4" onclick="addBranchRow()">
+                    <i class="fas fa-plus me-1"></i> Add Another Branch
+                </button>
+
+                <h5 class="section-divider"><span>Registration Preference</span></h5>
+                <div class="info-note-turquoise mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Select "I'd like a code" if you have managers who should access specific branches or one or more overseers who have access rights to all your registered branches working in your 'stead.</span>
+                </div>
+                <div class="mb-4 p-3" style="background:#f9f9f9; border-radius:6px; border:1px solid #eee;">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" asp-for="RegistrationPreference" value="Code" id="prefCode" checked>
+                        <label class="form-check-label" for="prefCode">I'd like a system generated code (for managers)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="RegistrationPreference" value="Self" id="prefSelf">
+                        <label class="form-check-label" for="prefSelf">I'd like to oversee everything myself</label>
+                    </div>
+                </div>
+
+                <h5 class="section-divider"><span>Security</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Password" class="form-label-custom">Password</label>
+                        <div class="password-wrapper">
+                            <input asp-for="Password" id="regPass" class="form-input-custom" type="password" placeholder="Min 8 characters" required />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('regPass', this)"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label-custom">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input asp-for="ConfirmPassword" id="conPass" class="form-input-custom" type="password" placeholder="Repeat password" required />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('conPass', this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-note mb-4">
+                    <i class="fas fa-clock"></i>
+                    <span>Account activation usually takes within 24 hours.</span>
+                </div>
+
+                <button type="submit" class="btn-auth-submit">
+                    <i class="fas fa-user-plus me-2"></i> Submit Registration
+                </button>
+            </form>
+
+            <div class="auth-footer mt-4 text-center">
+                <p>Already have an account? <a asp-action="Login" class="auth-link">Sign In</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    /* Gradient Background */
+    .auth-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    .auth-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 700px;
+        padding: 40px;
+    }
+
+    .section-divider {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        line-height: 0.1em;
+        margin: 25px 0 20px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #764ba2;
+        font-weight: bold;
+    }
+
+        .section-divider span {
+            background: #fff;
+            padding: 0 10px 0 0;
+        }
+
+    .form-label-custom {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .toggle-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #aaa;
+    }
+
+    .info-note {
+        background: #eef2ff;
+        border-left: 4px solid #667eea;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-note-turquoise {
+        background: #e0f7fa;
+        border-left: 4px solid #00acc1;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #006064;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-auth-submit {
+        width: 100%;
+        background: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .auth-link {
+        color: #764ba2;
+        text-decoration: none;
+        font-weight: 600;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let branchCount = 1;
+        function addBranchRow() {
+            const tbody = document.getElementById('branchBody');
+            const row = `<tr>
+                <td><input name="Branches[${branchCount}].BranchName" class="form-input-custom py-1" required /></td>
+                <td><input name="Branches[${branchCount}].StreetAddress" class="form-input-custom py-1" required /></td>
+                <td><input name="Branches[${branchCount}].City" class="form-input-custom py-1" required /></td>
+                <td><input name="Branches[${branchCount}].ZipCode" class="form-input-custom py-1" required /></td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+            </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+            branchCount++;
+        }
+
+        function togglePassword(inputId, icon) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+    </script>
+}

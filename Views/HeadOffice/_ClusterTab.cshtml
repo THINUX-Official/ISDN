@@ -1,0 +1,121 @@
+@model List<ISDN.Models.ViewModels.CustomerClusterViewModel>
+@{
+    var type = ViewData["Type"] as string ?? "pbos";
+    var tab = ViewData["Tab"] as string ?? "pending";
+}
+
+<div class="row">
+@foreach(var cluster in Model)
+{
+    <div class="col-12 cluster-card mb-3" data-type="@type" data-code="@cluster.UniqueCode" data-email="@cluster.Email" data-tab="@tab">
+        <div class="card shadow-sm mb-4 @(type=="pbom"?"border-primary":"border-info")">
+            <div class="card-header @(type=="pbom"?"bg-primary text-white":"bg-info text-white") d-flex justify-content-between">
+                <strong>@cluster.BusinessName</strong>
+                <span>Branches: @cluster.Branches.Count</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <label class="form-check-label me-2">Select:</label>
+                        <input type="checkbox" class="form-check-input cluster-select-all" data-cluster="@cluster.UniqueCode" onchange="toggleSelectAll('@cluster.UniqueCode', this.checked)" />
+                        <button class="btn btn-sm btn-link" onclick="selectAllCluster('@cluster.UniqueCode')">All</button>
+                        <button class="btn btn-sm btn-link" onclick="clearSelectionCluster('@cluster.UniqueCode')">Clear</button>
+                    </div>
+                    <div><small class="text-muted">Selected: <span class="selected-count" id="selectedCount-@cluster.UniqueCode">0</span></small></div>
+                </div>
+
+                <div style="max-height:400px; overflow:auto;">
+                <table class="table table-sm table-bordered" style="min-width:1200px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:40px"></th>
+                            <th>Business Type</th>
+                            <th>Business Name</th>
+                            <th>Branch</th>
+                            <th>City</th>
+                            <th>Email</th>
+                            <th>Street Address</th>
+                            <th>Zip</th>
+                            <th>Phone</th>
+                            <th>RDC</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach(var b in cluster.Branches)
+                    {
+                        <tr data-branch-id="@b.CustomerId" data-branch-name="@b.BranchName">
+                            <td class="align-middle"><input type="checkbox" class="form-check-input branch-checkbox" data-id="@b.CustomerId" data-cluster="@cluster.UniqueCode" data-main="@(b.IsMainBranch.ToString().ToLower())" onchange="updateSelectedCount('@cluster.UniqueCode')" /></td>
+                            <td class="align-middle">@b.BusinessType</td>
+                            <td class="align-middle">@cluster.BusinessName</td>
+                            <td class="align-middle">@b.BranchName</td>
+                            <td class="align-middle">@b.City</td>
+                            <td class="align-middle">@b.Email</td>
+                            <td class="align-middle">@b.StreetAddress</td>
+                            <td class="align-middle">@b.ZipCode</td>
+                            <td class="align-middle">@b.PhoneNumber</td>
+                            <td class="align-middle">
+                                <select class="form-select rdc-select" data-id="@b.CustomerId">
+                                    <option value="">Select RDC</option>
+                                    @foreach(var r in (IEnumerable<dynamic>)ViewBag.Rdcs)
+                                    {
+                                        var sel = b.RdcId.HasValue && b.RdcId.Value == r.RdcId ? " selected=\"selected\"" : "";
+                                        @Html.Raw($"<option value=\"{r.RdcId}\"{sel}>{r.RdcName}</option>")
+                                    }
+                                </select>
+                            </td>
+                            <td class="align-middle">
+                                @* Show current registration status as a badge and also indicate main branch if applicable *@
+                                @{
+                                    var status = (b.Status ?? string.Empty).ToUpperInvariant();
+                                    if (!string.IsNullOrEmpty(status))
+                                    {
+                                        var cls = status switch
+                                        {
+                                            "APPROVED" => "badge bg-success",
+                                            "PENDING" => "badge bg-info text-dark",
+                                            "DISAPPROVED" => "badge bg-danger",
+                                            "SUSPENDED" => "badge bg-secondary",
+                                            _ => "badge bg-light text-dark"
+                                        };
+                                        <span class="@cls">@status</span>
+                                    }
+
+                                    if (b.IsMainBranch)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-1">Main Branch</span>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+                </div>
+
+                <div class="d-grid gap-2">
+                    @if (tab == "pending")
+                    {
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success w-50" onclick="approveCluster('@cluster.UniqueCode')">Approve Entire Cluster</button>
+                            <button class="btn btn-outline-secondary w-50" onclick="disapproveCluster('@cluster.UniqueCode')">Disapprove Entire Cluster</button>
+                        </div>
+                    }
+                    else if (tab == "active")
+                    {
+                        <button class="btn btn-outline-danger" onclick="prepareActionConfirm('@cluster.UniqueCode','suspend','@tab')">Suspend (selected)</button>
+                    }
+                    else if (tab == "suspended")
+                    {
+                        <button class="btn btn-outline-secondary" onclick="prepareActionConfirm('@cluster.UniqueCode','delete','@tab')">Permanent Delete (selected)</button>
+                    }
+                    else if (tab == "disapproved")
+                    {
+                        <button class="btn btn-outline-secondary" onclick="confirmDeleteCluster('@cluster.UniqueCode')">Permanent Delete (entire cluster)</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>

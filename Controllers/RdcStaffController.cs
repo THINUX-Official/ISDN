@@ -40,6 +40,53 @@ namespace ISDN.Controllers
         }
 
         [HttpGet]
+        public IActionResult OrderLifeCycles()
+        {
+            ViewBag.RdcId = GetUserRdcId();
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOrderLifecycles()
+        {
+            var rdcId = GetUserRdcId();
+            if (!rdcId.HasValue) return Json(new { success = false, message = "RDC not found" });
+
+            var orders = await _context.Orders
+                .Include(o => o.OrderStatusLogs)
+                .Where(o => o.RdcId == rdcId.Value)
+                .OrderByDescending(o => o.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+
+            var result = orders.Select(o => new {
+                orderId = o.OrderId,
+                orderNumber = o.OrderNumber,
+                currentStatus = o.Status,
+                canonicalState = MapToCanonicalState(o.Status),
+                createdAt = o.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                lifecycle = o.OrderStatusLogs.OrderBy(l => l.CreatedAt).Select(l => new {
+                    status = l.Status,
+                    canonicalState = MapToCanonicalState(l.Status),
+                    timestamp = l.CreatedAt.ToString("MM/dd HH:mm")
+                }).ToList()
+            }).ToList();
+
+            return Json(new { success = true, data = result });
+        }
+
+        private string MapToCanonicalState(string rawStatus)
+        {
+            var s = rawStatus?.ToUpper() ?? "";
+            if (s == "PENDING" || s == "NEW") return "PENDING";
+            if (s.Contains("PROCESS") || s.Contains("RESERV") || s.Contains("ACKNOWLEDGE") || s == "PACKED") return "PROCESSING";
+            if (s.Contains("SHIP") || s.Contains("ON_THE_WAY") || s.Contains("DISPATCH")) return "SHIPPED";
+            if (s.Contains("DELIVER") || s.Contains("COMPLETE")) return "DELIVERED";
+            if (s.Contains("CANCEL") || s.Contains("REJECT") || s.Contains("FAIL") || s.Contains("RETURN")) return "CANCELLED/RETURNED";
+            return "UNKNOWN";
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Inventory()
         {
             var rdcId = GetUserRdcId();
