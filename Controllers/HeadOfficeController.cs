@@ -87,11 +87,50 @@ namespace ISDN.Controllers
         }
 
         [HttpGet]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            ViewBag.IsHeadOffice = IsHeadOfficeUser();
-            ViewBag.RdcId = GetUserRdcId();
-            return View();
+
+            var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var startOfNextMonth = startOfMonth.AddMonths(1);
+
+            try
+            {
+                var activeCustomerCount = await _context.Customers.Where(c => c.IsActive && c.registration_status == "APPROVED").CountAsync();
+                
+                var currentMonthOrderCount = await _context.Orders.Where(o => o.CreatedAt >= startOfMonth && o.CreatedAt < startOfNextMonth).CountAsync();
+                
+                var currentMonthSoldItemCount = await _context.OrderItems.Where(oi => oi.Order.CreatedAt >= startOfMonth && oi.Order.CreatedAt < startOfNextMonth)
+                    .SumAsync(oi => (int?)oi.Quantity) ?? 0;
+
+                var monthlySales = await _context.Orders.Where(o => o.CreatedAt >= startOfMonth && o.CreatedAt < startOfNextMonth)
+                    .SumAsync(o => (decimal?)o.TotalAmount) ?? 0m;
+
+                var returnValue = await (
+                    from r in _context.OrderReturns
+                    join oi in _context.OrderItems
+                        on new { r.OrderId, r.ProductId }
+                        equals new { oi.OrderId, oi.ProductId }
+                    join o in _context.Orders
+                        on r.OrderId equals o.OrderId
+                    where o.CreatedAt >= startOfMonth && o.CreatedAt < startOfNextMonth
+                    select (decimal)((oi.Subtotal / oi.Quantity) * r.Quantity)
+                ).SumAsync();
+
+                var netRevenue = monthlySales - returnValue;
+
+                ViewBag.ActiveCustomerCount = activeCustomerCount;
+                ViewBag.CurrentMonthOrderCount = currentMonthOrderCount;
+                ViewBag.CurrentMonthSoldItemCount = currentMonthSoldItemCount;
+                ViewBag.CurrentMonthRevenue = netRevenue; 
+                return View();
+            }
+            catch (Exception ex) {
+                ViewBag.ActiveCustomerCount = 0;
+                ViewBag.CurrentMonthOrderCount = 0;
+                ViewBag.CurrentMonthSoldItemCount = 0;
+                ViewBag.CurrentMonthRevenue = 0; 
+                return View();
+            }
         }
 
         [HttpGet]

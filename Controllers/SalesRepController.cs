@@ -33,17 +33,27 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            // Get orders with RDC filtering
+            // Apply RDC filtering
             var ordersQuery = _context.Orders.AsQueryable();
             ordersQuery = ApplyRdcFilter(ordersQuery);
 
+            // Total Orders
             var totalOrders = await ordersQuery.CountAsync();
 
-            var todayOrdersQuery = ordersQuery.Where(o => o.OrderDate.Date == DateTime.Today);
+            // Today's Orders
+            var todayOrdersQuery = ordersQuery
+                .Where(o => o.OrderDate.Date == DateTime.Today);
+
             var todayOrders = await todayOrdersQuery.CountAsync();
+
+            // Today's Sales
+            var todaySales = await todayOrdersQuery
+                .SumAsync(o => (decimal?)o.TotalAmount) ?? 0m;
 
             ViewBag.TotalOrders = totalOrders;
             ViewBag.TodayOrders = todayOrders;
+            ViewBag.TodaySales = Math.Round(todaySales, 2);
+
             ViewBag.RdcId = GetUserRdcId();
             ViewBag.IsHeadOffice = IsHeadOfficeUser();
 
