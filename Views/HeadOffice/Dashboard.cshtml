@@ -10,12 +10,14 @@
         </div>
     </div>
 
+
+
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-center border-warning">
                 <div class="card-body">
                     <i class="fas fa-users fa-3x text-warning mb-3"></i>
-                    <h3>2</h3>
+                    <h3>@ViewBag.ActiveCustomerCount</h3>
                     <p class="text-muted">Active Customers</p>
                 </div>
             </div>
@@ -24,7 +26,7 @@
             <div class="card text-center border-info">
                 <div class="card-body">
                     <i class="fas fa-boxes fa-3x text-info mb-3"></i>
-                    <h3>8</h3>
+                    <h3>@ViewBag.CurrentMonthOrderCount</h3>
                     <p class="text-muted">Monthly Orders</p>
                 </div>
             </div>
@@ -33,7 +35,7 @@
             <div class="card text-center border-primary">
                 <div class="card-body">
                     <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
-                    <h3>432</h3>
+                    <h3>@ViewBag.CurrentMonthSoldItemCount</h3>
                     <p class="text-muted">Sold Items</p>
                 </div>
             </div>
@@ -42,11 +44,14 @@
             <div class="card text-center border-success">
                 <div class="card-body">
                     <i class="fas fa-dollar-sign fa-3x text-success mb-3"></i>
-                    <h3>244700.00</h3>
+                    <h3>@ViewBag.CurrentMonthRevenue.ToString("F2")</h3>
                     <p class="text-muted">Monthly Revenue</p>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row mb-4">
     </div>
 
     <div class="row">
@@ -55,22 +60,63 @@
                 <div class="card-header bg-primary text-white">
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
-                <div class="card-body">
-                    <a asp-action="CustomerManagement" class="btn btn-outline-warning btn-block w-100 mb-2 text-dark">
-                        <i class="fas fa-user-check"></i> Manage Customers
-                    </a>
-                    <a asp-action="Inventory" class="btn btn-outline-success w-100 mb-2">
-                        <i class="fas fa-warehouse"></i> View Inventory
-                    </a>
-                    <a asp-action="Reports" class="btn btn-outline-primary btn-block w-100 mb-2">
-                        <i class="fas fa-file-alt"></i> View Reports
-                    </a>
-                    <a asp-action="KPIs" class="btn btn-outline-success btn-block w-100 mb-2">
-                        <i class="fas fa-chart-bar"></i> View KPIs
-                    </a>
+                <div class="card-body quick-actions-container">
+                    <div class="quick-actions-scroll-area">
+                        <a asp-action="CustomerManagement" class="btn btn-outline-warning btn-block w-100 mb-2 text-dark">
+                            <i class="fas fa-user-check"></i> Manage Customers
+                        </a>
+                        <a asp-action="Inventory" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-warehouse"></i> View Inventory
+                        </a>
+                        <a asp-action="Reports" class="btn btn-outline-primary btn-block w-100 mb-2">
+                            <i class="fas fa-file-alt"></i> View Reports
+                        </a>
+                        <a asp-action="KPIs" class="btn btn-outline-success btn-block w-100 mb-2">
+                            <i class="fas fa-chart-bar"></i> View KPIs
+                        </a>
+                        <a asp-controller="HeadOffice" asp-action="ClusterManagement" class="btn btn-outline-info btn-block w-100 mb-2">
+                            <i class="fas fa-user-tie"></i> Manage Customers (Primary Business Owners)
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<style>
+    /* Fixed height set to exactly show 4 buttons (~205px depending on padding/margins) */
+    .quick-actions-container {
+        height: 201px;
+        overflow-y: hidden;
+        padding: 0;
+    }
+
+    .quick-actions-scroll-area {
+        height: 100%;
+        overflow-y: hidden;
+        padding: 1.25rem; /* Matches default card-body padding */
+    }
+
+    /* Reveal scrollbar and enable scrolling only on hover of the card-body */
+    .quick-actions-container:hover .quick-actions-scroll-area {
+        overflow-y: auto;
+    }
+
+    /* Ghost scrollbar styling */
+    .quick-actions-scroll-area::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .quick-actions-scroll-area::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 4px;
+    }
+
+        .quick-actions-scroll-area::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0,0,0,0.4);
+        }
+</style>
 
         @* <div class="col-md-6">
             <div class="card">

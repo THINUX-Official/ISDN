@@ -1,0 +1,95 @@
+@{
+    /* Partial: Send Invoice Modal */
+}
+<div class="modal fade" id="sendInvoiceModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header" style="background: linear-gradient(90deg,#1a237e,#3949ab); color:white;">
+        <h5 class="modal-title">Send Invoice via Email</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Recipient Email</label>
+              <input id="si_recipient" class="form-control" type="email" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Subject</label>
+              <input id="si_subject" class="form-control" type="text" value="Your ISDN Invoice" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Message</label>
+              <textarea id="si_message" class="form-control" rows="6">Please find your invoice attached below. Thank you for your purchase.</textarea>
+            </div>
+          </div>
+          <div class="col-md-6 d-flex flex-column align-items-center justify-content-center">
+            <div style="width:160px;height:160px;border-radius:12px;background:linear-gradient(180deg,#fff,#f6f9ff);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+              <i class="fas fa-envelope-open-text" style="font-size:48px;color:#1976d2"></i>
+            </div>
+            <div class="mt-3 text-center text-muted small">Emails are sent securely via Gmail SMTP (TLS). The invoice HTML will be included in the message body.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="si_send_btn" type="button" class="btn btn-primary">Send Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    document.addEventListener('click', function(e){
+      if(!e.target) return;
+      var el = e.target.closest('#si_send_btn');
+      if(el){
+        const btn = document.getElementById('si_send_btn');
+        btn.disabled = true; btn.innerText = 'Sending...';
+
+            const payload = {
+          To: document.getElementById('si_recipient').value,
+          Subject: document.getElementById('si_subject').value,
+          Message: document.getElementById('si_message').value,
+          Html: document.getElementById('si_html') ? document.getElementById('si_html').value : (document.getElementById('payment_invoice_html') ? document.getElementById('payment_invoice_html').innerHTML : document.body.innerHTML)
+        };
+
+        fetch('/Payments/SendInvoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+          },
+          body: JSON.stringify(payload)
+        }).then(async r => {
+          btn.disabled = false; btn.innerText = 'Send Invoice';
+          // Try to parse JSON safely, fall back to text
+          try {
+            const contentType = r.headers.get('content-type') || '';
+            if (contentType.indexOf('application/json') !== -1) {
+              const j = await r.json();
+              if (j && j.success) {
+                Swal.fire({icon:'success',title:'Sent',text:j.message});
+                var modalEl = document.getElementById('sendInvoiceModal');
+                var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.hide();
+              } else {
+                Swal.fire({icon:'error',title:'Error',text:(j && j.message) ? j.message : 'Failed to send email.'});
+              }
+            } else {
+              const txt = await r.text();
+              Swal.fire({icon:'error',title:'Error',text: txt || 'Unexpected server response.'});
+            }
+          } catch(parseErr) {
+            Swal.fire({icon:'error',title:'Error',text: parseErr.message || 'Failed to parse server response.'});
+          }
+        }).catch(err=>{
+          btn.disabled = false; btn.innerText = 'Send Invoice';
+          Swal.fire({icon:'error',title:'Error',text:err.message || 'Network error'});
+        });
+      }
+    });
+  })();
+</script>

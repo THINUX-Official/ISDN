@@ -26,7 +26,7 @@ namespace ISDN.Models
 
         [Column("email")]
         [MaxLength(100)]
-        public string? email { get; set; }
+        public string? email { get; set; } // The '?' is essential here
 
         [Column("phone_number")]
         [MaxLength(20)]
@@ -52,6 +52,21 @@ namespace ISDN.Models
         [MaxLength(255)]
         public string? temp_password_hash { get; set; }
 
+        public string GetPasswordHash()
+        {
+            if (string.IsNullOrEmpty(temp_password_hash)) return string.Empty;
+            var parts = temp_password_hash.Split('|');
+            // If split succeeds and there's a code, hash is at index 1. Else, it's the whole string.
+            return parts.Length > 1 ? parts[1] : parts[0];
+        }
+
+        public string? GetRegistrationCode()
+        {
+            if (string.IsNullOrEmpty(temp_password_hash)) return null;
+            var parts = temp_password_hash.Split('|');
+            return parts.Length > 1 ? parts[0] : null;
+        }
+
         [Column("rdc_id")]
         public int? RdcId { get; set; }
 
@@ -73,6 +88,8 @@ namespace ISDN.Models
 
         [ForeignKey("RdcId")]
         public virtual Rdc? Rdc { get; set; }
+
+        
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }

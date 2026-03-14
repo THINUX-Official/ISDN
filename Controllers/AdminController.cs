@@ -108,8 +108,12 @@ namespace ISDN.Controllers
             {
                 var users = await _userRepository.GetAllAsync();
                 var auditLogs = await _auditService.GetAuditLogsAsync();
-                
+                var totalRoles = await _context.Roles.CountAsync();
+                var availableInventory = await _context.Inventories.CountAsync();
+
                 ViewBag.TotalUsers = users?.Count() ?? 0;
+                ViewBag.TotalRoles = totalRoles;
+                ViewBag.AvailableInventory = availableInventory; 
                 ViewBag.RecentLogs = auditLogs?.Take(10) ?? Enumerable.Empty<AuditLog>();
                 
                 return View();
@@ -118,6 +122,8 @@ namespace ISDN.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading admin dashboard: {ex.Message}");
                 ViewBag.TotalUsers = 0;
+                ViewBag.TotalRoles = 0;
+                ViewBag.AvailableInventory = 0;
                 ViewBag.RecentLogs = Enumerable.Empty<AuditLog>();
                 ViewBag.ErrorMessage = "Unable to load dashboard data. Please try again.";
                 return View();
