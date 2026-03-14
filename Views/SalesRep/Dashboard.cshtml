@@ -41,83 +41,80 @@
         </div>
     </div>
 
-    <div class="row">
-        <!-- Analytics & Forecasting Panel -->
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header bg-dark text-white">
-                    <h5><i class="fas fa-chart-line"></i> Demand Forecasting & Predictive Analytics</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="nav nav-tabs" id="analyticsTabs" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab">Regional Sales Forecast</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="seasonal-tab" data-bs-toggle="tab" data-bs-target="#seasonal" type="button" role="tab">Seasonal Demand</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="velocity-tab" data-bs-toggle="tab" data-bs-target="#velocity" type="button" role="tab">Item Velocity</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" id="retailer-tab" data-bs-toggle="tab" data-bs-target="#retailer" type="button" role="tab">Retailer Patterns</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content mt-3" id="analyticsTabsContent" style="min-height: 250px;">
-                        <div class="tab-pane fade show active" id="sales" role="tabpanel">
-                            <h6>Projected Sales by Region (Next 30 Days)</h6>
-                            <canvas id="salesForecastChart" height="100"></canvas>
-                        </div>
-                        <div class="tab-pane fade" id="seasonal" role="tabpanel">
-                            <h6>Upcoming Seasonal Trends</h6>
-                            <ul class="list-group" id="seasonalTrendsList">
-                                <li class="list-group-item text-muted">Loading trends...</li>
-                            </ul>
-                        </div>
-                        <div class="tab-pane fade" id="velocity" role="tabpanel">
-                            <h6>Fast vs Slow Moving Products</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="alert alert-success">
-                                        <strong>Fast Moving:</strong> <br/>
-                                        <span id="fastMovingList">Loading...</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="alert alert-warning">
-                                        <strong>Slow Moving:</strong> <br/>
-                                        <span id="slowMovingList">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="alert alert-danger mt-2">
-                                <strong>High Stockout Risk:</strong> <span id="stockoutRiskList">Loading...</span>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="retailer" role="tabpanel">
-                            <h6>Retailer Buying Pattern Analysis</h6>
-                            <p class="text-muted small" id="buyingPatternsList">Analyzing retailer frequency...</p>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="#" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="fas fa-plus-circle"></i> Create New Order
+                </a>
+                <a asp-action="Orders" class="btn btn-outline-success w-100 mb-2">
+                    <i class="fas fa-list"></i> View All Orders
+                </a>
+                <a href="#" class="btn btn-outline-info w-100 mb-2">
+                    <i class="fas fa-users"></i> View Customers
+                </a>
             </div>
         </div>
+    </div>
 
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
-                </div>
-                <div class="card-body">
-                    <a href="#" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="fas fa-plus-circle"></i> Create New Order
-                    </a>
-                    <a asp-action="Orders" class="btn btn-outline-success w-100 mb-2">
-                        <i class="fas fa-list"></i> View All Orders
-                    </a>
-                    <a href="#" class="btn btn-outline-info w-100 mb-2">
-                        <i class="fas fa-users"></i> View Customers
-                    </a>
+    <div class="col-12 mt-4">
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5><i class="fas fa-chart-line"></i> Demand Forecasting & Predictive Analytics</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="analyticsTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab">Regional Sales Forecast</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="seasonal-tab" data-bs-toggle="tab" data-bs-target="#seasonal" type="button" role="tab">Seasonal Demand</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="velocity-tab" data-bs-toggle="tab" data-bs-target="#velocity" type="button" role="tab">Item Velocity</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="retailer-tab" data-bs-toggle="tab" data-bs-target="#retailer" type="button" role="tab">Retailer Patterns</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3" id="analyticsTabsContent" style="min-height: 250px;">
+                    <div class="tab-pane fade show active" id="sales" role="tabpanel">
+                        <h6>Projected Sales by Region (Next 30 Days)</h6>
+                        <canvas id="salesForecastChart" height="100"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="seasonal" role="tabpanel">
+                        <h6>Upcoming Seasonal Trends</h6>
+                        <ul class="list-group" id="seasonalTrendsList">
+                            <li class="list-group-item text-muted">Loading trends...</li>
+                        </ul>
+                    </div>
+                    <div class="tab-pane fade" id="velocity" role="tabpanel">
+                        <h6>Fast vs Slow Moving Products</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <strong>Fast Moving:</strong> <br />
+                                    <span id="fastMovingList">Loading...</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-warning">
+                                    <strong>Slow Moving:</strong> <br />
+                                    <span id="slowMovingList">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-danger mt-2">
+                            <strong>High Stockout Risk:</strong> <span id="stockoutRiskList">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="retailer" role="tabpanel">
+                        <h6>Retailer Buying Pattern Analysis</h6>
+                        <p class="text-muted small" id="buyingPatternsList">Analyzing retailer frequency...</p>
+                    </div>
                 </div>
             </div>
         </div>
