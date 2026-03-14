@@ -26,10 +26,45 @@ namespace ISDN.Controllers
         }
 
         [HttpGet]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            ViewBag.RdcId = GetUserRdcId();
+            int rdcId = GetUserRdcId() ?? 0;
+
+            var deliveriesQuery = _context.Deliveries.AsQueryable();
+
+            // Apply RDC filter (important for multi-RDC system)
+            deliveriesQuery = ApplyRdcFilter(deliveriesQuery);
+
+            // 1️⃣ Active Deliveries (currently in transit)
+            var activeDeliveries = await deliveriesQuery
+                .Where(d => d.Status == "In Transit")
+                .CountAsync();
+
+            // 2️⃣ Active Drivers
+            var activeDrivers = await _context.Users
+                .Where(u => u.RoleId == 5 && u.IsActive && u.RdcId == rdcId)
+                .CountAsync();
+
+            // 3️⃣ Pending Schedule (scheduled but not started)
+            var pendingSchedule = await deliveriesQuery
+                .Where(d => d.Status == "SCHEDULED")
+                .CountAsync();
+
+            // 4️⃣ Completed Today
+            var completedToday = await deliveriesQuery
+                .Where(d => d.Status == "DELIVERED"
+                    && d.DeliveryDate.HasValue
+                    && d.DeliveryDate.Value.Date == DateTime.Today)
+                .CountAsync();
+
+            ViewBag.ActiveDeliveries = activeDeliveries;
+            ViewBag.ActiveDrivers = activeDrivers;
+            ViewBag.PendingSchedule = pendingSchedule;
+            ViewBag.CompletedToday = completedToday;
+
+            ViewBag.RdcId = rdcId;
             ViewBag.IsHeadOffice = IsHeadOfficeUser();
+
             return View();
         }
 

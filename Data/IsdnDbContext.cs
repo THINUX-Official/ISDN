@@ -37,9 +37,7 @@ namespace ISDN.Data
 
         public DbSet<ReturnReason> ReturnReasons { get; set; }
 
-
-      
-
+        public DbSet<StockTransfer> StockTransfers { get; set; }
 
         public DbSet<OrderReturn> OrderReturns { get; set; }
         public DbSet<OrderStatusLog> OrderStatusLogs { get; set; }

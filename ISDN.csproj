@@ -7,7 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- MailKit for modern SMTP -->
+    <PackageReference Include="MailKit" Version="4.0.3" />
+    <!-- PdfSharpCore for PDF generation -->
+    <PackageReference Include="PdfSharpCore" Version="1.3.24" />
+    <!-- QuestPDF for polished PDF generation -->
+    <PackageReference Include="QuestPDF" Version="2024.*" />
     <!-- MySQL Database Provider -->
+    <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.*" />
     
     <!-- JWT Authentication -->

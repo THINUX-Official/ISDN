@@ -1,0 +1,218 @@
+﻿@using ISDN.Models.ViewModels
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<div class="container-fluid py-4">
+    <input type="hidden" id="__RequestVerificationToken" value="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+    <input type="hidden" id="__AdminEmail" value="@User?.Identity?.Name" />
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Primary Business Owners Management</h2>
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="viewType" id="btnPBOS" checked>
+            <label class="btn btn-outline-primary" for="btnPBOS" onclick="toggleView('pbos')">PBOS (Single)</label>
+
+            <input type="radio" class="btn-check" name="viewType" id="btnPBOM">
+            <label class="btn btn-outline-primary" for="btnPBOM" onclick="toggleView('pbom')">PBOM (Multi)</label>
+        </div>
+
+        @await Html.PartialAsync("_ActionConfirmModal")
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="clusterTabs" role="tablist">
+        <li class="nav-item"><a class="nav-link active" id="pendingTab" data-bs-toggle="tab" href="#clusterPending" role="tab">Pending</a></li>
+        <li class="nav-item"><a class="nav-link" id="activeTab" data-bs-toggle="tab" href="#clusterActive" role="tab">Active/Approved</a></li>
+        <li class="nav-item"><a class="nav-link" id="suspendedTab" data-bs-toggle="tab" href="#clusterSuspended" role="tab">Suspended</a></li>
+        <li class="nav-item"><a class="nav-link" id="disapprovedTab" data-bs-toggle="tab" href="#clusterDisapproved" role="tab">Disapproved</a></li>
+    </ul>
+
+    <div id="clusterContainer" class="row">
+        <div class="tab-content mb-4 w-100">
+            <div class="tab-pane fade show active" id="clusterPending" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterPendingContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterActive" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterActiveContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterSuspended" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterSuspendedContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterDisapproved" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterDisapprovedContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p class="fw-bold">Permanent Delete</p>
+                    <p>This will permanently remove all branches in the cluster. This action cannot be undone. Continue?</p>
+                    <div class="text-end">
+                        <button class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-danger" onclick="performDeleteConfirmed()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Composition Modal -->
+    <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Notification Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="emailModalType" />
+                    <input type="hidden" id="emailModalCode" />
+                    <input type="hidden" id="emailBranchIds" />
+                    <div id="emailModalErrors" class="alert alert-danger d-none">
+                        <ul id="emailModalErrorsList" class="mb-0"></ul>
+                    </div>
+                    <div class="mb-2">
+                        <label>To</label>
+                        <input type="email" id="emailTo" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>From</label>
+                        <input type="email" id="emailFrom" class="form-control" value="@User?.Identity?.Name" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Subject</label>
+                        <input type="text" id="emailSubject" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Message</label>
+                        <textarea id="emailMessage" class="form-control" rows="6"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label>Preview</label>
+                        <div id="emailPreview" class="border p-2 bg-white" style="min-height:120px; overflow:auto;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-primary me-2" onclick="loadEmailPreview()">Refresh Preview</button>
+                    <button type="button" class="btn btn-primary" onclick="sendEmailFromModal()">Send Email</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const antiToken = '@Antiforgery.GetAndStoreTokens(Context).RequestToken';
+
+        function toggleView(type) {
+            loadTab(type, 'pending');
+            document.getElementById('btnPBOS').checked = type === 'pbos';
+            document.getElementById('btnPBOM').checked = type === 'pbom';
+        }
+
+        async function loadTab(type, tab) {
+            const actionName = type === 'pbos' ? 'GetPbosClusters' : 'GetPbomClusters';
+            const url = `/HeadOffice/${actionName}?tab=${encodeURIComponent(tab)}`;
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) {
+                const html = await resp.text();
+                const paneId = tab === 'pending' ? 'clusterPendingContent' : tab === 'active' ? 'clusterActiveContent' : tab === 'suspended' ? 'clusterSuspendedContent' : 'clusterDisapprovedContent';
+                const pane = document.getElementById(paneId);
+                if (pane) pane.innerHTML = html;
+            } else {
+                console.error('Failed to load clusters tab');
+            }
+        }
+
+        function refreshCurrentTab() {
+            const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
+            const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
+            loadTab(type, activeTab);
+        }
+
+        // minimal helper placeholders to keep client-side behavior
+        function sendEmailFromModal() {
+            const type = document.getElementById('emailModalType').value;
+            const code = document.getElementById('emailModalCode').value;
+            const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
+            const to = document.getElementById('emailTo').value;
+            const from = document.getElementById('emailFrom').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            fetch('/HeadOffice/SendClusterEmail', {
+                method: 'POST',
+                cache: 'no-store',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiToken
+                },
+                body: JSON.stringify({ UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds })
+            }).then(async (r) => {
+                if (r.ok) {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('emailModal'));
+                    if (modal) modal.hide();
+                } else {
+                    console.error('Email send failed');
+                }
+            }).catch(err => console.error(err));
+        }
+
+        async function loadEmailPreview() {
+            const type = document.getElementById('emailModalType').value;
+            const code = document.getElementById('emailModalCode').value;
+            const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
+            const to = document.getElementById('emailTo').value;
+            const from = document.getElementById('emailFrom').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            const payload = { UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds };
+            const resp = await fetch('/HeadOffice/PreviewClusterEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiToken
+                },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                document.getElementById('emailPreview').innerHTML = data.Html || '';
+            } else {
+                document.getElementById('emailPreview').innerHTML = '<em>Preview not available</em>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            loadTab('pbos','pending');
+            document.querySelectorAll('#clusterTabs a[data-bs-toggle="tab"]').forEach(a=>{
+                a.addEventListener('shown.bs.tab', function(e){
+                    const tabKey = e.target.getAttribute('href').replace('#cluster','').toLowerCase();
+                    const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
+                    loadTab(type, tabKey);
+                });
+            });
+        });
+    </script>
+}

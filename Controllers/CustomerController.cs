@@ -1,19 +1,17 @@
 using ISDN.Constants;
 using ISDN.Data;
 using ISDN.Models;
-using Microsoft.EntityFrameworkCore;
-using ISDN_Distribution.Repositories;
 using ISDN.Repositories;
 using ISDN.ViewModels;
 using ISDN_Distribution.Models;
-using System.Net.Mail;
-using System.Net;
-using System.Text;
-using Microsoft.Extensions.Configuration;
 using ISDN_Distribution.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Net;
+using System.Net.Mail;
+using System.Text;
 
 namespace ISDN.Controllers
 {
@@ -278,6 +276,17 @@ namespace ISDN.Controllers
                     ViewBag.Address = (customer.street_address + ", " + customer.city).Trim(new char[] { ' ', ',' });
                     ViewBag.ZipCode = customer.zip_code;
                     ViewBag.PhoneNumber = customer.phone_number;
+                    // Populate cluster info for PBOS/PBOM
+                    var userType = ISDN.Helpers.AuthHelper.GetValue(customer.business_name, 2);
+                    ViewBag.UserType = userType;
+                    if (string.Equals(userType, "PBOS", StringComparison.OrdinalIgnoreCase) || string.Equals(userType, "PBOM", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var allCustomers = await _context.Customers.ToListAsync();
+                        var uniqueCode = customer.GetRegistrationCode() ?? "SBO_" + customer.CustomerId;
+                        var cluster = allCustomers.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode).ToList();
+                        ViewBag.ClusterBranches = cluster.Select(c => new { c.CustomerId, Name = ISDN.Helpers.AuthHelper.GetValue(c.business_name,4) ?? (c.street_address + ", " + c.city) }).ToList();
+                        ViewBag.BusinessTypes = cluster.Select(c => ISDN.Helpers.AuthHelper.GetValue(c.business_name,1)).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
+                    }
                 }
             }
 
@@ -293,7 +302,7 @@ namespace ISDN.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProcessPayment(string card_name, string card_number, string exp_month, string exp_year, string cvc, decimal amount, string payment_method, string bank_ref, string CustomerEmail)
+        public async Task<IActionResult> ProcessPayment(string card_name, string card_number, string exp_month, string exp_year, string cvc, decimal amount, string payment_method, string bank_ref, string CustomerEmail, int? selectedBranchId, string? businessType)
         {
             var items = GetCartItems();
             if (!items.Any()) return RedirectToAction(nameof(Cart));
@@ -338,9 +347,17 @@ namespace ISDN.Controllers
                 }
             }
 
+            // If the user selected a specific branch (PBOS/PBOM), map the order to that branch
+            ISDN.Models.Customer? orderBranch = null;
+            if (selectedBranchId.HasValue && selectedBranchId.Value > 0)
+            {
+                orderBranch = await _context.Customers.FindAsync(selectedBranchId.Value);
+            }
+
             // Create Order and Payment inside try/catch so errors are shown on the same page
             var newOrder = new ISDN.Models.Order
             {
+                // Default to current user / customer
                 UserId = userId,
                 CustomerId = customer.CustomerId,
                 RdcId = customer.RdcId,
@@ -353,6 +370,19 @@ namespace ISDN.Controllers
                 DeliveryAddress = (customer.street_address + ", " + customer.city).Trim(new char[] { ' ', ',' }),
                 OrderItems = items.Select(c => new ISDN.Models.OrderItem { ProductId = c.ProductId, Quantity = c.Quantity, Subtotal = c.Total }).ToList()
             };
+
+            // If a branch was explicitly selected and it belongs to the same cluster, use its details
+            if (orderBranch != null)
+            {
+                // Use branch customer id
+                newOrder.CustomerId = orderBranch.CustomerId;
+                // Prefer branch.UserId for the order user if available, else keep current userId
+                newOrder.UserId = orderBranch.UserId ?? userId;
+                // Set RDC to branch's RDC
+                newOrder.RdcId = orderBranch.RdcId;
+                // Use branch address
+                newOrder.DeliveryAddress = (orderBranch.street_address + ", " + orderBranch.city).Trim(new char[] { ' ', ',' });
+            }
 
             try
             {

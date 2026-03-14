@@ -29,7 +29,7 @@
                            class="form-control-modern" 
                            type="email"
                            autocomplete="username"
-                           placeholder="you@isdn.lk" 
+                           placeholder="you@@isdn.lk"
                            autofocus />
                     <span asp-validation-for="Email" class="form-error"></span>
                 </div>
@@ -47,6 +47,9 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
+                    <div style="text-align: right; margin-top: 5px; display: none;" id="forgotPasswordContainer">
+                        <a href="@Url.Action("ForgotPassword", "Account")" class="auth-link" style="font-size: 0.85em;">Forgot your password?</a>
+                    </div>
                     <span asp-validation-for="Password" class="form-error"></span>
                 </div>
 
@@ -57,8 +60,11 @@
 
             <div class="auth-footer">
                 <p class="auth-footer-text">
-                    Don't have an account? 
-                    <a asp-action="Register" asp-controller="Account" class="auth-link">Create account</a>
+                    Don't have an account?
+                    <a href="javascript:void(0)"
+                       data-bs-toggle="modal"
+                       data-bs-target="#registrationModal"
+                       class="auth-link">Create account</a>
                 </p>
             </div>
         </div>
@@ -85,6 +91,32 @@
                 button.setAttribute('aria-label', 'Show password');
             }
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var pwdInput = document.getElementById("loginPassword");
+            var emailInput = document.getElementById("Email");
+            var forgotContainer = document.getElementById("forgotPasswordContainer");
+
+            function updateForgotLinkVisibility() {
+                if (pwdInput && forgotContainer && emailInput) {
+                    var isGmail = emailInput.value.trim().toLowerCase().endsWith("@@gmail.com");
+                    if (pwdInput.value.length > 0 && isGmail) {
+                        forgotContainer.style.display = "block";
+                    } else {
+                        forgotContainer.style.display = "none";
+                    }
+                }
+            }
+
+            if (pwdInput && forgotContainer && emailInput) {
+                // Initial check
+                updateForgotLinkVisibility();
+
+                // Add event listeners
+                pwdInput.addEventListener("input", updateForgotLinkVisibility);
+                emailInput.addEventListener("input", updateForgotLinkVisibility);
+            }
+        });
     </script>
 }
 

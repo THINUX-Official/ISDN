@@ -35,6 +35,9 @@ namespace ISDN.Models
         [Column("last_updated")]
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
+
         // Navigation property
         [ForeignKey("ProductId")]
         public virtual Product? Product { get; set; }

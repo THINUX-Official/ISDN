@@ -198,7 +198,7 @@
                         <i class="fas fa-print mr-2"></i> Print Invoice
                     </button>
 
-                    <button onclick="sendEmailPopup()" class="btn btn-mail btn-action">
+                    <button id="openSendInvoice" type="button" class="btn btn-mail btn-action" data-bs-toggle="modal" data-bs-target="#sendInvoiceModal">
                         <i class="fas fa-envelope mr-2"></i> Send to Mail
                     </button>
 
@@ -213,6 +213,47 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+@* Include send invoice modal *@
+@await Html.PartialAsync("~/Views/Shared/_SendInvoiceModal.cshtml")
+
+@* Antiforgery token for AJAX post *@
+@Html.AntiForgeryToken()
+
+<script>
+    // Prefill modal recipient and invoice HTML
+    document.addEventListener('DOMContentLoaded', function () {
+        var openBtn = document.getElementById('openSendInvoice');
+        openBtn && openBtn.addEventListener('click', function () {
+            var recipient = '@(ViewBag.CustomerEmail ?? "")';
+            var input = document.getElementById('si_recipient');
+            if (input && recipient) input.value = recipient;
+            // ensure payment_invoice_html is visible for capture
+            var snap = document.getElementById('payment_invoice_html');
+            if (snap) snap.style.display = 'block';
+        });
+    });
+</script>
+
+@* Wrap invoice HTML so modal script can capture clean content *@
+<div id="payment_invoice_html" style="display:none">
+    @* Minimal invoice snapshot for email body *@
+    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
+        <h2>ISDN Invoice</h2>
+        <p>Order Reference: @((ViewBag.OrderNumber ?? ViewBag.OrderId) ?? "#")</p>
+        <p>Amount Paid: Rs. @totalSum.ToString("N2")</p>
+        <hr />
+        @if (Model != null)
+        {
+            <ul>
+            @foreach(var item in Model)
+            {
+                <li>@item.ProductName (x@item.Quantity) - Rs. @item.Total.ToString("N2")</li>
+            }
+            </ul>
+        }
     </div>
 </div>
 

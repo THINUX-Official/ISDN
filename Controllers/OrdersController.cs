@@ -26,14 +26,39 @@ namespace ISDN_Distribution.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> MyOrders()
+        public async Task<IActionResult> MyOrders(int? branchId, string? businessType)
         {
             var userIdClaim = User.FindFirst("user_id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) return RedirectToAction("Login", "Account");
 
             if (int.TryParse(userIdClaim, out int currentUserId))
             {
-                var viewModel = await _orderRepository.GetCustomerOrdersAsync(currentUserId);
+                // Determine customer and userType
+                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == currentUserId);
+                var viewModel = new ISDN_Distribution.Models.CustomerOrdersViewModel();
+
+                if (customer != null)
+                {
+                    var userType = ISDN.Helpers.AuthHelper.GetValue(customer.business_name, 2);
+                    if (string.Equals(userType, "PBOS", StringComparison.OrdinalIgnoreCase) || string.Equals(userType, "PBOM", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Provide cluster branches and business types for dropdowns
+                        var allCustomers = await _context.Customers.ToListAsync();
+                        var uniqueCode = customer.GetRegistrationCode() ?? "SBO_" + customer.CustomerId;
+                        var cluster = allCustomers.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode).ToList();
+                        ViewBag.ClusterBranches = cluster.Select(c => new { c.CustomerId, Name = ISDN.Helpers.AuthHelper.GetValue(c.business_name, 4) ?? c.street_address ?? c.email }).ToList();
+                        ViewBag.BusinessTypes = cluster.Select(c => ISDN.Helpers.AuthHelper.GetValue(c.business_name, 1)).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
+
+                        ViewBag.SelectedBranchId = branchId;
+                        ViewBag.SelectedBusinessType = businessType;
+                        viewModel = await _orderRepository.GetClusterOrdersAsync(currentUserId, branchId, businessType);
+                    }
+                    else
+                    {
+                        viewModel = await _orderRepository.GetCustomerOrdersAsync(currentUserId);
+                    }
+                }
+
                 return View(viewModel);
             }
             return RedirectToAction("Login", "Account");

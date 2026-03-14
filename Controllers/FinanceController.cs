@@ -25,7 +25,7 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            // Get payments with RDC filtering
+            // Total Revenue
             var paymentsQuery = _context.Payments
                 .Where(p => p.PaymentStatus == "Completed")
                 .AsQueryable();
@@ -34,6 +34,7 @@ namespace ISDN.Controllers
 
             var totalRevenue = await paymentsQuery.SumAsync(p => p.Amount);
 
+            // Pending Payments
             var pendingPaymentsQuery = _context.Payments
                 .Where(p => p.PaymentStatus == "Pending")
                 .AsQueryable();
@@ -42,8 +43,19 @@ namespace ISDN.Controllers
 
             var pendingPayments = await pendingPaymentsQuery.CountAsync();
 
+            // Invoices Today (Orders created today)
+            var invoicesTodayQuery = _context.Orders.AsQueryable();
+
+            invoicesTodayQuery = ApplyRdcFilter(invoicesTodayQuery);
+
+            var invoicesToday = await invoicesTodayQuery
+                .Where(o => o.OrderDate.Date == DateTime.Today)
+                .CountAsync();
+
             ViewBag.TotalRevenue = totalRevenue;
             ViewBag.PendingPayments = pendingPayments;
+            ViewBag.InvoicesToday = invoicesToday;
+
             ViewBag.RdcId = GetUserRdcId();
             ViewBag.IsHeadOffice = IsHeadOfficeUser();
 

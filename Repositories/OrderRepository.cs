@@ -27,6 +27,7 @@ namespace ISDN_Distribution.Repositories
                 .Where(o => o.CustomerId == customer.CustomerId && o.RdcId == customer.RdcId)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Deliveries) // <--- CRITICAL FIX: Add this line
+                .Include(o => o.OrderStatusLogs)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -50,6 +51,52 @@ namespace ISDN_Distribution.Repositories
         public async Task<CustomerOrdersViewModel> GetByUserIdAsync(int userId)
         {
             return await GetCustomerOrdersAsync(userId);
+        }
+
+        // New: Get orders across a customer's cluster (PBOS/PBOM) with optional filters
+        public async Task<CustomerOrdersViewModel> GetClusterOrdersAsync(int userId, int? branchId = null, string? businessType = null)
+        {
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+            if (customer == null) return new CustomerOrdersViewModel();
+
+            // Materialize customers to use GetRegistrationCode()
+            var allCustomers = await _context.Customers.ToListAsync();
+            var uniqueCode = customer.GetRegistrationCode() ?? "SBO_" + customer.CustomerId;
+            var clusterMembers = allCustomers.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode).ToList();
+
+            if (branchId.HasValue)
+            {
+                clusterMembers = clusterMembers.Where(c => c.CustomerId == branchId.Value).ToList();
+            }
+            if (!string.IsNullOrEmpty(businessType))
+            {
+                clusterMembers = clusterMembers.Where(c => ISDN.Helpers.AuthHelper.GetValue(c.business_name, 1).Equals(businessType, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            var branchIds = clusterMembers.Select(c => c.CustomerId).ToList();
+
+            var ordersFromDb = await _context.Orders
+                .Where(o => o.CustomerId.HasValue && branchIds.Contains(o.CustomerId.Value))
+                .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
+                .Include(o => o.Deliveries)
+                .Include(o => o.OrderStatusLogs)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            var orderIds = ordersFromDb.Select(o => o.OrderId).ToList();
+            var returns = await _context.OrderReturns
+                .Where(r => orderIds.Contains(r.OrderId))
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            var reasons = await _context.ReturnReasons.Select(r => r.ReasonText).ToListAsync();
+
+            return new CustomerOrdersViewModel
+            {
+                Orders = ordersFromDb,
+                ReturnReasons = reasons,
+                MyReturns = returns
+            };
         }
 
         public async Task<List<Order>> GetOrdersByStatusAndRdcAsync(string status, int rdcId)

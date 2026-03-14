@@ -46,5 +46,9 @@ namespace ISDN.Models
 
         [Column("other_reason_description")]
         public string? OtherReasonDescription { get; set; }
+
+        // Navigation property
+        [ForeignKey("OrderId")]
+        public virtual Order? Order { get; set; }
     }
 }
