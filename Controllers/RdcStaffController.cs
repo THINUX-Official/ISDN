@@ -521,5 +521,77 @@ namespace ISDN.Controllers
             }
             return Json(new { success = false, message = "Order cannot be requested for packing." });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetStockForEdit(int inventoryId)
+        {
+            var rdcId = GetUserRdcId();
+            if (!rdcId.HasValue) return Json(new { success = false, message = "RDC not found" });
+
+            var inv = await _context.Inventories
+                .Include(i => i.Product)
+                .FirstOrDefaultAsync(i => i.InventoryId == inventoryId && i.RdcId == rdcId.Value);
+
+            if (inv == null) return Json(new { success = false, message = "Inventory item not found" });
+
+            return Json(new {
+                success = true,
+                inventoryId = inv.InventoryId,
+                productName = inv.Product?.ProductName ?? "Unknown",
+                available = inv.QuantityAvailable,
+                reserved = inv.QuantityReserved
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStock(int inventoryId, int addQuantity = 0, int newReserved = 0)
+        {
+            var rdcId = GetUserRdcId();
+            if (!rdcId.HasValue) return Json(new { success = false, message = "RDC not found" });
+
+            var inv = await _context.Inventories.FirstOrDefaultAsync(i => i.InventoryId == inventoryId && i.RdcId == rdcId.Value);
+            if (inv == null) return Json(new { success = false, message = "Inventory item not found" });
+
+            if (addQuantity < 0 || newReserved < 0)
+            {
+                return Json(new { success = false, message = "Quantities cannot be negative" });
+            }
+
+            inv.QuantityAvailable += addQuantity;
+            inv.QuantityReserved = newReserved;
+            inv.LastUpdated = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Stock updated successfully" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetInactiveRdcs()
+        {
+            var rdcs = await _context.Rdcs
+                .Where(r => !r.IsActive)
+                .Select(r => new { id = r.RdcId, name = r.RdcName })
+                .ToListAsync();
+            return Json(new { success = true, rdcs });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRdcProducts(int rdcId)
+        {
+            var products = await _context.Inventories
+                .Include(i => i.Product)
+                .Where(i => i.RdcId == rdcId)
+                .Select(i => new {
+                    inventoryId = i.InventoryId,
+                    productId = i.ProductId,
+                    productName = i.Product != null ? i.Product.ProductName : "Unknown",
+                    available = i.QuantityAvailable,
+                    reserved = i.QuantityReserved
+                }).ToListAsync();
+
+            return Json(new { success = true, products });
+        }
     }
 }
