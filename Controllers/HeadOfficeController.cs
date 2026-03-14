@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using ISDN.Constants;
 using ISDN.Data;
 using ISDN.Helpers;
@@ -7,7 +11,8 @@ using ISDN_Distribution.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ISDN.Models.ViewModels; 
+using Microsoft.Extensions.Configuration;
+using ISDN.Models.ViewModels;
 
 namespace ISDN.Controllers
 {
@@ -35,7 +40,7 @@ namespace ISDN.Controllers
             {
                 if (req == null || string.IsNullOrEmpty(req.UniqueCode))
                     return BadRequest(new { errors = new[] { "Invalid request payload." } });
-                // req is model-bound from JSON body
+
                 var all = await _context.Customers.ToListAsync();
                 var clusterBranches = all.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == req.UniqueCode).ToList();
                 var businessName = ISDN.Helpers.AuthHelper.GetValue(clusterBranches.FirstOrDefault()?.business_name, 3) ?? "Customer";
@@ -89,16 +94,15 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-
             var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
             var startOfNextMonth = startOfMonth.AddMonths(1);
 
             try
             {
                 var activeCustomerCount = await _context.Customers.Where(c => c.IsActive && c.registration_status == "APPROVED").CountAsync();
-                
+
                 var currentMonthOrderCount = await _context.Orders.Where(o => o.CreatedAt >= startOfMonth && o.CreatedAt < startOfNextMonth).CountAsync();
-                
+
                 var currentMonthSoldItemCount = await _context.OrderItems.Where(oi => oi.Order.CreatedAt >= startOfMonth && oi.Order.CreatedAt < startOfNextMonth)
                     .SumAsync(oi => (int?)oi.Quantity) ?? 0;
 
@@ -121,14 +125,15 @@ namespace ISDN.Controllers
                 ViewBag.ActiveCustomerCount = activeCustomerCount;
                 ViewBag.CurrentMonthOrderCount = currentMonthOrderCount;
                 ViewBag.CurrentMonthSoldItemCount = currentMonthSoldItemCount;
-                ViewBag.CurrentMonthRevenue = netRevenue; 
+                ViewBag.CurrentMonthRevenue = netRevenue;
                 return View();
             }
-            catch (Exception ex) {
+            catch (Exception)
+            {
                 ViewBag.ActiveCustomerCount = 0;
                 ViewBag.CurrentMonthOrderCount = 0;
                 ViewBag.CurrentMonthSoldItemCount = 0;
-                ViewBag.CurrentMonthRevenue = 0; 
+                ViewBag.CurrentMonthRevenue = 0;
                 return View();
             }
         }
@@ -136,12 +141,7 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> Reports()
         {
-            // Head Office sees all orders across all RDCs
-            var ordersQuery = _context.Orders
-                .Include(o => o.User)
-                .AsQueryable();
-
-            // Apply RDC filter (will return all for Head Office)
+            var ordersQuery = _context.Orders.Include(o => o.User).AsQueryable();
             ordersQuery = ApplyRdcFilter(ordersQuery);
 
             var totalOrders = await ordersQuery.CountAsync();
@@ -157,15 +157,9 @@ namespace ISDN.Controllers
         [HttpGet]
         public async Task<IActionResult> KPIs()
         {
-            // Head Office can view KPIs across all RDCs
-            var ordersQuery = _context.Orders.AsQueryable();
-            ordersQuery = ApplyRdcFilter(ordersQuery);
-
-            var deliveriesQuery = _context.Deliveries.AsQueryable();
-            deliveriesQuery = ApplyRdcFilter(deliveriesQuery);
-
-            var paymentsQuery = _context.Payments.AsQueryable();
-            paymentsQuery = ApplyRdcFilter(paymentsQuery);
+            var ordersQuery = ApplyRdcFilter(_context.Orders.AsQueryable());
+            var deliveriesQuery = ApplyRdcFilter(_context.Deliveries.AsQueryable());
+            var paymentsQuery = ApplyRdcFilter(_context.Payments.AsQueryable());
 
             ViewBag.TotalOrders = await ordersQuery.CountAsync();
             ViewBag.PendingDeliveries = await deliveriesQuery.CountAsync(d => d.Status == "Pending");
@@ -175,21 +169,12 @@ namespace ISDN.Controllers
             return View();
         }
 
-        // GET: /HeadOffice/CustomerManagement
         [HttpGet]
         public async Task<IActionResult> CustomerManagement()
         {
-            // Only load customers that are registered as SBO user type.
-            // We first narrow results at the database level by checking the stored
-            // business_name contains the pipe-delimited SBO marker ("|SBO|") to
-            // avoid pulling every customer. Then we defensively filter in memory
-            // using the AuthHelper to ensure we only include exact SBO user types.
-
             var dbCandidates = await _context.Customers.ToListAsync();
             dbCandidates = dbCandidates.Where(c => !string.IsNullOrEmpty(c.business_name) && c.business_name.Contains("|SBO|")).ToList();
 
-            // The stored format is: |BusinessType|UserType|BusinessName|BranchName
-            // UserType is at index 2 when using AuthHelper.GetValue
             var sboCustomers = dbCandidates
                 .Where(c => ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)
                              .Equals("SBO", StringComparison.OrdinalIgnoreCase))
@@ -198,18 +183,26 @@ namespace ISDN.Controllers
             ViewBag.PendingCustomers = sboCustomers.Where(c => c.registration_status == "PENDING").ToList();
             ViewBag.ActiveCustomers = sboCustomers.Where(c => c.registration_status == "APPROVED").ToList();
             ViewBag.DisapprovedCustomers = sboCustomers.Where(c => c.registration_status == "DISAPPROVED").ToList();
-
-            // Keep the RDC list for your dropdowns
             ViewBag.Rdcs = await _context.Rdcs.ToListAsync();
 
             return View();
         }
 
-
         public class ApproveClusterRequest
         {
             public string? UniqueCode { get; set; }
             public Dictionary<int, int>? BranchRdcAssignments { get; set; }
+        }
+
+        public class ClusterEmailRequest
+        {
+            public string? UniqueCode { get; set; }
+            public string? Type { get; set; }
+            public string? To { get; set; }
+            public string? From { get; set; }
+            public string? Subject { get; set; }
+            public string? Message { get; set; }
+            public List<int>? BranchIds { get; set; }
         }
 
         public class ManageClusterRequest
@@ -235,30 +228,23 @@ namespace ISDN.Controllers
             var uniqueCode = request.UniqueCode;
             var branchRdcAssignments = request.BranchRdcAssignments;
 
-            // 1. Fetch branches that belong to the cluster (by unique code)
             var allCustomers = await _context.Customers.ToListAsync();
             var branches = allCustomers.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode).ToList();
 
             if (!branches.Any()) return BadRequest("No customers found for this cluster.");
 
-            // Ensure RDC assignments are provided for every branch in the cluster
             var missingAssignments = branches.Where(b => !branchRdcAssignments.ContainsKey(b.CustomerId)).ToList();
-            if (missingAssignments.Any())
-            {
-                return BadRequest("Please select an RDC for every branch before approving the cluster.");
-            }
+            if (missingAssignments.Any()) return BadRequest("Please select an RDC for every branch before approving the cluster.");
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Create a user only for the main branch (first branch that contains email)
                 var mainBranch = branches.FirstOrDefault(b => !string.IsNullOrEmpty(b.email));
                 User? createdUser = null;
 
                 if (mainBranch != null && !mainBranch.UserId.HasValue)
                 {
                     var passwordHash = mainBranch.GetPasswordHash();
-
                     var bManagerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "B_MANAGER");
                     if (bManagerRole == null)
                     {
@@ -281,20 +267,15 @@ namespace ISDN.Controllers
                     mainBranch.UserId = newUser.UserId;
                 }
 
-                // Update every branch with selected RDC and approved state
                 foreach (var branch in branches)
                 {
-                    if (branchRdcAssignments.TryGetValue(branch.CustomerId, out int rdcId))
-                    {
-                        branch.RdcId = rdcId;
-                    }
+                    if (branchRdcAssignments.TryGetValue(branch.CustomerId, out int rdcId)) branch.RdcId = rdcId;
                     branch.registration_status = "APPROVED";
                     branch.IsActive = true;
                 }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-
                 return Ok();
             }
             catch (Exception ex)
@@ -304,12 +285,34 @@ namespace ISDN.Controllers
             }
         }
 
-
-
-
         [HttpGet]
         public async Task<IActionResult> ClusterManagement()
         {
+            var allCustomers = await _context.Customers.ToListAsync();
+
+            var clusters = allCustomers
+                .Where(c => c.registration_status == "PENDING" || c.registration_status == "APPROVED")
+                .GroupBy(c => c.GetRegistrationCode() ?? "SBO_" + c.CustomerId)
+                .Select(g => new CustomerClusterViewModel
+                {
+                    UniqueCode = g.Key,
+                    BusinessName = AuthHelper.GetValue(g.FirstOrDefault().business_name, 3),
+                    BusinessType = AuthHelper.GetValue(g.FirstOrDefault().business_name, 2),
+                    Email = g.FirstOrDefault().email,
+                    Branches = g.Select(b => new CustomerBranchViewModel
+                    {
+                        CustomerId = b.CustomerId,
+                        BranchName = AuthHelper.GetValue(b.business_name, 4),
+                        City = b.city,
+                        Status = b.registration_status,
+                        IsMainBranch = !string.IsNullOrEmpty(b.email)
+                    }).ToList()
+                }).ToList();
+
+            ViewBag.PBOS = clusters.Where(c => c.Branches.Count == 1).ToList();
+            ViewBag.PBOM = clusters.Where(c => c.Branches.Count > 1).ToList();
+            ViewBag.Rdcs = await _context.Rdcs.ToListAsync();
+
             return View();
         }
 
@@ -366,7 +369,6 @@ namespace ISDN.Controllers
                     }).ToList()
                 }).ToList();
 
-            // Filter out SBO and match requested UserType
             var typeFiltered = clusters.Where(c => !c.ContainsSbo && string.Equals(c.UserType, requestedType, StringComparison.OrdinalIgnoreCase));
 
             tab = (tab ?? "pending").ToLowerInvariant();
@@ -394,7 +396,6 @@ namespace ISDN.Controllers
                 .ToList();
         }
 
-        // Suspend selected branches (branchIds). If branchIds is empty/null, suspend whole cluster identified by UniqueCode.
         [HttpPost]
         public async Task<IActionResult> SuspendBranches([FromBody] ManageClusterRequest request)
         {
@@ -449,7 +450,6 @@ namespace ISDN.Controllers
             }
         }
 
-        // Permanently delete selected branches. If BranchIds empty, delete whole cluster only if allowed by business rules.
         [HttpPost]
         public async Task<IActionResult> DeleteBranches([FromBody] ManageClusterRequest request)
         {
@@ -498,9 +498,6 @@ namespace ISDN.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-
-
 
         [HttpPost]
         public async Task<IActionResult> ManageClusterState([FromBody] ManageClusterRequest request)
@@ -597,21 +594,19 @@ namespace ISDN.Controllers
             {
                 if (req == null || string.IsNullOrEmpty(req.UniqueCode))
                     return BadRequest(new { errors = new[] { "Invalid request payload." } });
-                // req is model-bound
+
                 var all = await _context.Customers.ToListAsync();
                 var clusterBranches = all.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == req.UniqueCode).ToList();
                 var businessName = ISDN.Helpers.AuthHelper.GetValue(clusterBranches.FirstOrDefault()?.business_name, 3) ?? "Customer";
                 var mainBranch = clusterBranches.FirstOrDefault(b => !string.IsNullOrEmpty(b.email));
                 var mainEmail = mainBranch?.email ?? req.To;
 
-                // Build placeholders
                 var branchNames = clusterBranches.Where(b => req.BranchIds == null || !req.BranchIds.Any() || req.BranchIds.Contains(b.CustomerId))
                     .Select(b => ISDN.Helpers.AuthHelper.GetValue(b.business_name, 4)).Where(n => !string.IsNullOrEmpty(n)).ToList();
 
-                string template;
-                // Build HTML templates
                 var branchNamesHtml = string.Join("", branchNames.Select(n => $"<li>{System.Net.WebUtility.HtmlEncode(n)}</li>"));
 
+                string template;
                 if (string.Equals(req.Type, "approve", StringComparison.OrdinalIgnoreCase))
                 {
                     template = $"<p>Dear {System.Net.WebUtility.HtmlEncode(businessName)},</p>" +
@@ -658,11 +653,9 @@ namespace ISDN.Controllers
                 mail.IsBodyHtml = true;
                 await client.SendMailAsync(mail);
 
-                // If this is a suspension, apply branch-level suspension if branchIds provided
                 if (string.Equals(req.Type, "suspend", StringComparison.OrdinalIgnoreCase) && req.BranchIds != null && req.BranchIds.Any())
                 {
                     var mainBranchId = mainBranch?.CustomerId;
-                    // If admin is trying to suspend the main branch alone, disallow
                     if (mainBranchId.HasValue && req.BranchIds.Contains(mainBranchId.Value) && req.BranchIds.Count < clusterBranches.Count)
                     {
                         return BadRequest(new { errors = new[] { "Cannot suspend the main branch without suspending the entire cluster." } });
@@ -697,22 +690,6 @@ namespace ISDN.Controllers
             }
         }
 
-        public class ClusterEmailRequest
-        {
-            public string? UniqueCode { get; set; }
-            public string? Type { get; set; }
-            public string? To { get; set; }
-            public string? From { get; set; }
-            public string? Subject { get; set; }
-            public string? Message { get; set; }
-            public List<int>? BranchIds { get; set; }
-        }
-
-
-        // POST: /HeadOffice/ApproveCustomer
-        // ISDN.Controllers/HeadOfficeController.cs
-
-        // 1. Approve Logic එකේ වෙනස
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveCustomer(int customerId, int rdcId)
@@ -722,23 +699,17 @@ namespace ISDN.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Find the target branch and its cluster
                 var targetCustomer = await _context.Customers.FindAsync(customerId);
                 if (targetCustomer == null) throw new Exception("Customer not found.");
 
                 string uniqueCode = targetCustomer.GetRegistrationCode() ?? "SBO_" + targetCustomer.CustomerId;
 
-                // 2. Fetch all members of this cluster
                 var allPending = await _context.Customers.Where(c => c.registration_status == "PENDING").ToListAsync();
-                var clusterBranches = allPending
-                    .Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode)
-                    .ToList();
+                var clusterBranches = allPending.Where(c => (c.GetRegistrationCode() ?? "SBO_" + c.CustomerId) == uniqueCode).ToList();
 
-                // 3. Process the cluster
                 bool userCreated = false;
                 foreach (var branch in clusterBranches)
                 {
-                    // Only create one user for the cluster (using the Main Branch)
                     if (!userCreated && branch.business_name != null && branch.business_name.Contains("Main Branch"))
                     {
                         var newUser = new User
@@ -756,7 +727,6 @@ namespace ISDN.Controllers
                         userCreated = true;
                     }
 
-                    // Update status for every branch in the cluster
                     branch.RdcId = rdcId;
                     branch.registration_status = "APPROVED";
                     branch.IsActive = true;
@@ -774,20 +744,16 @@ namespace ISDN.Controllers
             return RedirectToAction(nameof(CustomerManagement));
         }
 
-        // 2. Disapprove Logic එකේ වෙනස (Damith ගේ ප්‍රශ්නය Fix එක)
         [HttpPost]
         public async Task<IActionResult> DisapproveCustomer(int customerId)
         {
             var customer = await _context.Customers.FindAsync(customerId);
             if (customer == null) return NotFound();
 
-            // මචං, මෙතන Remove කරන්න එපා. Status එක වෙනස් කරන්න විතරක්.
-            // එතකොට තමයි එයා Disapproved tab එකට වැටෙන්නේ.
             customer.registration_status = "DISAPPROVED";
             customer.IsActive = false;
             customer.DisapprovedAt = DateTime.Now;
 
-            // පරණ User account එකක් තිබුණොත් ඒක මකන්න
             if (customer.UserId.HasValue)
             {
                 var user = await _context.Users.FindAsync(customer.UserId);
@@ -802,10 +768,6 @@ namespace ISDN.Controllers
             return RedirectToAction(nameof(CustomerManagement));
         }
 
-        // POST: /HeadOffice/PermanentDeleteCustomer
-        // --- මේ කොටස Controller එකේ අදාළ තැන්වලට Replace කරන්න ---
-
-        // 1. Permanent Delete එකේදී User වත් මකා දැමීම (syncing deletion)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PermanentDeleteCustomer(int customerId)
@@ -815,7 +777,6 @@ namespace ISDN.Controllers
                 var customer = await _context.Customers.FindAsync(customerId);
                 if (customer != null && customer.registration_status == "DISAPPROVED")
                 {
-                    // පාරිභෝගිකයාට සම්බන්ධ User කෙනෙක් ඉන්නවා නම් එයාවත් මකනවා
                     if (customer.UserId.HasValue)
                     {
                         var user = await _context.Users.FindAsync(customer.UserId.Value);
@@ -834,7 +795,6 @@ namespace ISDN.Controllers
             return RedirectToAction(nameof(CustomerManagement));
         }
 
-        // 2. අලුත් Update Details Action එක (Popup එකෙන් එන දත්ත සඳහා)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCustomerDetails(int customerId, string businessName, string streetAddress, string city, string zipCode, int rdcId)
@@ -850,7 +810,6 @@ namespace ISDN.Controllers
                 customer.zip_code = zipCode;
                 customer.RdcId = rdcId;
 
-                // User table එකේ තියෙන RdcId එකත් update කරන්න ඕනේ නම්:
                 if (customer.UserId.HasValue)
                 {
                     var user = await _context.Users.FindAsync(customer.UserId.Value);
@@ -867,10 +826,8 @@ namespace ISDN.Controllers
             return RedirectToAction(nameof(CustomerManagement));
         }
 
-
         private bool IsSboCustomer(string? businessName)
         {
-            // Adjust these keywords to match exactly how your registration logic stores them
             if (string.IsNullOrEmpty(businessName)) return false;
             return businessName.Contains("SBO", StringComparison.OrdinalIgnoreCase);
         }

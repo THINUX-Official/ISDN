@@ -4,6 +4,7 @@
 <div class="container-fluid py-4">
     <input type="hidden" id="__RequestVerificationToken" value="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <input type="hidden" id="__AdminEmail" value="@User?.Identity?.Name" />
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Primary Business Owners Management</h2>
         <div class="btn-group" role="group">
@@ -14,7 +15,7 @@
             <label class="btn btn-outline-primary" for="btnPBOM" onclick="toggleView('pbom')">PBOM (Multi)</label>
         </div>
 
-    @await Html.PartialAsync("_ActionConfirmModal")
+        @await Html.PartialAsync("_ActionConfirmModal")
     </div>
 
     <ul class="nav nav-tabs mb-3" id="clusterTabs" role="tablist">
@@ -24,596 +25,194 @@
         <li class="nav-item"><a class="nav-link" id="disapprovedTab" data-bs-toggle="tab" href="#clusterDisapproved" role="tab">Disapproved</a></li>
     </ul>
 
-    <div class="tab-content mb-4">
-        <div class="tab-pane fade show active" id="clusterPending" role="tabpanel">
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+    <div id="clusterContainer" class="row">
+        <div class="tab-content mb-4 w-100">
+            <div class="tab-pane fade show active" id="clusterPending" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterPendingContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterActive" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterActiveContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterSuspended" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterSuspendedContent"></div>
+            </div>
+
+            <div class="tab-pane fade" id="clusterDisapproved" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+                </div>
+                <div id="clusterDisapprovedContent"></div>
             </div>
         </div>
-        <div class="tab-pane fade" id="clusterActive" role="tabpanel">
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
-            </div>
-        </div>
-        <div class="tab-pane fade" id="clusterSuspended" role="tabpanel">
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
-            </div>
-        </div>
-        <div class="tab-pane fade" id="clusterDisapproved" role="tabpanel">
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-secondary" onclick="refreshCurrentTab()">Refresh</button>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <p class="fw-bold">Permanent Delete</p>
+                    <p>This will permanently remove all branches in the cluster. This action cannot be undone. Continue?</p>
+                    <div class="text-end">
+                        <button class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-danger" onclick="performDeleteConfirmed()">Delete</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- clusterContainer removed: content is loaded dynamically into tabs via GetClustersTab -->
-</div>
-
-<script>
-    const antiToken = '@Antiforgery.GetAndStoreTokens(Context).RequestToken';
-
-    function toggleView(type) {
-        // Load the Pending tab for the chosen type by AJAX
-        loadTab(type, 'pending');
-        // Set radio UI
-        document.getElementById('btnPBOS').checked = type === 'pbos';
-        document.getElementById('btnPBOM').checked = type === 'pbom';
-    }
-
-    async function loadTab(type, tab) {
-        const actionName = type === 'pbos' ? 'GetPbosClusters' : 'GetPbomClusters';
-        const url = `/HeadOffice/${actionName}?tab=${encodeURIComponent(tab)}`;
-        const resp = await fetch(url, { cache: 'no-store' });
-        if (resp.ok) {
-            const html = await resp.text();
-            const paneId = tab === 'pending' ? 'clusterPending' : tab === 'active' ? 'clusterActive' : tab === 'suspended' ? 'clusterSuspended' : 'clusterDisapproved';
-            // Preserve the refresh button area by replacing only the inner content after the button
-            const pane = document.getElementById(paneId);
-            const refreshContainer = pane.querySelector('.d-flex.justify-content-end');
-            pane.innerHTML = html;
-            if (refreshContainer) pane.prepend(refreshContainer);
-            // After injecting HTML, wire up selection helpers
-            wireUpClusterSelection();
-            // enforce main branch rules
-            enforceMainBranchSelectionRules();
-        } else {
-            console.error('Failed to load clusters tab');
-        }
-    }
-
-    function refreshCurrentTab() {
-        const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
-        const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-        loadTab(type, activeTab);
-    }
-
-    function wireUpClusterSelection() {
-        // initialize counts
-        document.querySelectorAll('.cluster-card').forEach(card => {
-            const code = card.getAttribute('data-code');
-            updateSelectedCount(code);
-        });
-    }
-
-    function updateSelectedCount(clusterCode) {
-        const checkboxes = Array.from(document.querySelectorAll(`.branch-checkbox[data-cluster='${clusterCode}']`));
-        const selected = checkboxes.filter(cb => cb.checked).length;
-        const countEl = document.getElementById(`selectedCount-${clusterCode}`);
-        if (countEl) countEl.textContent = selected;
-        // toggle select-all checkbox state
-        const allEl = document.querySelector(`.cluster-select-all[data-cluster='${clusterCode}']`);
-        if (allEl) allEl.checked = checkboxes.length > 0 && selected === checkboxes.length;
-        // enforce rule: cannot select only main branch
-        enforceMainBranchSelectionRulesFor(clusterCode);
-    }
-
-    function toggleSelectAll(clusterCode, checked) {
-        document.querySelectorAll(`.branch-checkbox[data-cluster='${clusterCode}']`).forEach(cb => cb.checked = checked);
-        updateSelectedCount(clusterCode);
-    }
-
-    function selectAllCluster(clusterCode) { toggleSelectAll(clusterCode, true); }
-    function clearSelectionCluster(clusterCode) { toggleSelectAll(clusterCode, false); }
-
-    function enforceMainBranchSelectionRules() {
-        document.querySelectorAll('.cluster-card').forEach(card => enforceMainBranchSelectionRulesFor(card.getAttribute('data-code')));
-    }
-
-    function enforceMainBranchSelectionRulesFor(clusterCode) {
-        const checkboxes = Array.from(document.querySelectorAll(`.branch-checkbox[data-cluster='${clusterCode}']`));
-        if (!checkboxes.length) return;
-        const mainBoxes = checkboxes.filter(cb => cb.dataset.main === 'true');
-        if (mainBoxes.length === 0) return;
-        const selected = checkboxes.filter(cb => cb.checked);
-        // If only main branch is selected, disable the action buttons
-        const selectedOnlyMain = selected.length === 1 && selected[0].dataset.main === 'true';
-        const suspendBtn = document.querySelector(`.suspend-action[data-cluster='${clusterCode}']`);
-        const deleteBtn = document.querySelector(`.delete-action[data-cluster='${clusterCode}']`);
-        if (suspendBtn) suspendBtn.disabled = selectedOnlyMain;
-        if (deleteBtn) deleteBtn.disabled = selectedOnlyMain;
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-        // load initial view
-        loadTab('pbos','pending');
-
-        document.querySelectorAll('#clusterTabs a[data-bs-toggle="tab"]').forEach(a=>{
-            a.addEventListener('shown.bs.tab', function(e){
-                const tabKey = e.target.getAttribute('href').replace('#cluster','').toLowerCase();
-                const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-                loadTab(type, tabKey);
-            });
-        });
-
-        // Wire proceed button for actionConfirmModal
-        const proceedBtn = document.getElementById('actionConfirmProceed');
-        if (proceedBtn) {
-            proceedBtn.addEventListener('click', async function(){
-                const cluster = document.getElementById('actionConfirmCluster').value;
-                const action = document.getElementById('actionConfirmType').value;
-                // Gather selected branch ids
-                const selected = Array.from(document.querySelectorAll(`.branch-checkbox[data-cluster='${cluster}']:checked`)).map(cb => parseInt(cb.dataset.id));
-                // If none selected, treat as whole cluster
-                const branchIds = selected.length ? selected : [];
-
-                if (action === 'suspend') {
-                    // Call new SuspendBranches endpoint
-                    const payload = { UniqueCode: cluster, BranchIds: branchIds };
-                    const resp = await fetch('/HeadOffice/SuspendBranches', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': antiToken }, body: JSON.stringify(payload)
-                    });
-                    if (resp.ok) {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('actionConfirmModal'));
-                        modal.hide();
-                        showMessage('success', 'Selected branches suspended.');
-                        // refresh current tab
-                        const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-                        const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
-                        loadTab(type, activeTab);
-                    } else {
-                        const text = await resp.text(); showMessage('danger', 'Suspend failed: ' + text);
-                    }
-                } else if (action === 'delete') {
-                    const payload = { UniqueCode: cluster, BranchIds: branchIds };
-                    const resp = await fetch('/HeadOffice/DeleteBranches', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': antiToken }, body: JSON.stringify(payload)
-                    });
-                    if (resp.ok) {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('actionConfirmModal'));
-                        modal.hide();
-                        showMessage('success', 'Selected branches deleted.');
-                        const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-                        const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
-                        loadTab(type, activeTab);
-                    } else {
-                        const text = await resp.text(); showMessage('danger', 'Delete failed: ' + text);
-                    }
-                }
-            });
-        }
-    });
-
-    async function approveCluster(code) {
-        // Collect RDC assignments only for branches inside this cluster card
-        const card = document.querySelector(`.cluster-card[data-code='${code}']`);
-        let assignments = {};
-        if (card) {
-            card.querySelectorAll('.rdc-select').forEach(sel => {
-                const bid = parseInt(sel.dataset.id);
-                const val = parseInt(sel.value);
-                if (!isNaN(bid) && !isNaN(val)) assignments[bid] = val;
-            });
-        }
-
-        const payload = { UniqueCode: code, BranchRdcAssignments: assignments };
-        const response = await fetch('/HeadOffice/ApproveCluster', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-            // After approval, open email modal to allow admin to notify customer
-            const card = document.querySelector(`.cluster-card[data-code='${code}']`);
-            const to = card?.getAttribute('data-email') || '';
-            document.getElementById('emailModalType').value = 'approve';
-            document.getElementById('emailModalCode').value = code;
-            document.getElementById('emailBranchIds').value = JSON.stringify([]);
-            document.getElementById('emailTo').value = to;
-            document.getElementById('emailFrom').value = document.getElementById('__AdminEmail')?.value || '';
-            document.getElementById('emailSubject').value = 'Notification: Approval of Your Registration Cluster';
-            document.getElementById('emailMessage').value = 'Your registration cluster has been approved. You may now log in.';
-            const modal = new bootstrap.Modal(document.getElementById('emailModal'));
-            modal.show();
-            // load preview
-            setTimeout(loadEmailPreview, 100);
-            // refresh tab in background after a short delay to show new statuses
-            setTimeout(() => {
-                const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-                const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
-                loadTab(type, activeTab);
-            }, 800);
-        } else {
-            const txt = await response.text();
-            showMessage('danger', 'Approval failed: ' + txt);
-        }
-    }
-
-    async function disapproveCluster(code) {
-        if (!confirm('Disapprove entire cluster? This will move branches to the Disapproved tab.')) return;
-        const payload = { UniqueCode: code, Action: 'DISAPPROVE', RdcAssignments: {} };
-        const response = await fetch('/HeadOffice/ManageClusterState', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-            // Open email modal to notify customer
-            const card = document.querySelector(`.cluster-card[data-code='${code}']`);
-            const to = card?.getAttribute('data-email') || '';
-            document.getElementById('emailModalType').value = 'suspend';
-            document.getElementById('emailModalCode').value = code;
-            document.getElementById('emailBranchIds').value = JSON.stringify([]);
-            document.getElementById('emailTo').value = to;
-            document.getElementById('emailFrom').value = document.getElementById('__AdminEmail')?.value || '';
-            document.getElementById('emailSubject').value = 'Notification: Disapproval of Your Registration Cluster';
-            document.getElementById('emailMessage').value = 'Your registration cluster has been disapproved.';
-            const modal = new bootstrap.Modal(document.getElementById('emailModal'));
-            modal.show();
-            setTimeout(loadEmailPreview, 100);
-            // refresh current tab
-            const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
-            const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
-            loadTab(type, activeTab);
-        } else {
-            const txt = await response.text();
-            showMessage('danger', 'Disapprove failed: ' + txt);
-        }
-    }
-
-    async function suspendCluster(code) {
-        // For full-cluster suspend, open the email modal with no branchIds
-        document.getElementById('emailModalType').value = 'suspend';
-        document.getElementById('emailModalCode').value = code;
-        document.getElementById('emailBranchIds').value = JSON.stringify([]);
-        // Prefill to/from/subject
-        const card = document.querySelector(`.cluster-card[data-code='${code}']`);
-        const to = card?.getAttribute('data-email') || '';
-        document.getElementById('emailTo').value = to;
-        document.getElementById('emailFrom').value = document.getElementById('__AdminEmail')?.value || '';
-        document.getElementById('emailSubject').value = 'Notification: Suspension of Your Branch(es)';
-        document.getElementById('emailMessage').value = 'Your branch or cluster has been suspended. Please contact ISDN for more details.';
-        const modal = new bootstrap.Modal(document.getElementById('emailModal'));
-        modal.show();
-
-        // Load preview after modal shows so DOM is ready
-        setTimeout(loadEmailPreview, 50);
-    }
-
-    function openSuspendModal(code) {
-        // Gather checked branch ids
-        const checked = Array.from(document.querySelectorAll('.branch-suspend-checkbox:checked')).map(cb => parseInt(cb.dataset.id));
-        // Show modal
-        document.getElementById('emailModalType').value = 'suspend';
-        document.getElementById('emailModalCode').value = code;
-        document.getElementById('emailBranchIds').value = JSON.stringify(checked);
-        // Prefill recipient with main branch email if available via data attr
-        const card = document.querySelector(`.cluster-card[data-code='${code}']`);
-        const to = card?.getAttribute('data-email') || '';
-        document.getElementById('emailTo').value = to;
-        const modal = new bootstrap.Modal(document.getElementById('emailModal'));
-        modal.show();
-    }
-
-    async function deleteCluster(code) {
-        if (!confirm('Permanent delete will remove ALL branches in this cluster. Continue?')) return;
-        const payload = { uniqueCode: code, action: 'DELETE', rdcAssignments: {} };
-        const response = await fetch('/HeadOffice/ManageClusterState', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-            // Open email composition modal for disapproval/deletion notification
-            openEmailModal('delete', code);
-        }
-        else alert('Delete failed');
-    }
-
-    // showMessage: inline Bootstrap alert
-    function showMessage(type, text) {
-        const areaId = 'clusterMessageArea';
-        let area = document.getElementById(areaId);
-        if (!area) {
-            area = document.createElement('div');
-            area.id = areaId;
-            document.querySelector('.container-fluid')?.prepend(area);
-        }
-        // Use Bootstrap toast
-        area.innerHTML = `<div class="toast-container position-fixed top-0 end-0 p-3" id="toastPlacement"></div>`;
-        const toastPlacement = document.getElementById('toastPlacement');
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-bg-${type} border-0';
-        toast.role = 'alert';
-        toast.ariaLive = 'assertive';
-        toast.ariaAtomic = 'true';
-        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${text}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
-        toastPlacement.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
-        bsToast.show();
-    }
-
-    // Delete confirmation modal handler
-    let deleteTargetCode = null;
-    function confirmDeleteCluster(code) {
-        // legacy direct delete fallback: open cluster-level confirmation
-        deleteTargetCode = code;
-        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-        modal.show();
-    }
-
-    // New: prepareActionConfirm shows a modal listing selected branches and asks for confirmation
-    function prepareActionConfirm(clusterCode, action) {
-        const selectedBoxes = Array.from(document.querySelectorAll(`.branch-checkbox[data-cluster='${clusterCode}']:checked`));
-        const branchNames = selectedBoxes.map(cb => {
-            const row = cb.closest('tr');
-            return row ? row.querySelector('[data-branch-name]')?.getAttribute('data-branch-name') || row.innerText.trim() : cb.closest('td')?.innerText.trim();
-        }).filter(Boolean);
-
-        // If no selection, assume whole cluster
-        const isWholeCluster = branchNames.length === 0;
-
-        // Prevent selecting only main branch
-        if (branchNames.length === 1) {
-            const cb = selectedBoxes[0];
-            if (cb && cb.dataset.main === 'true') {
-                alert('Cannot perform this action on the main branch alone. Select other branches or choose the whole cluster.');
-                return;
-            }
-        }
-
-        // Fill modal
-        document.getElementById('actionConfirmModalTitle').textContent = action === 'delete' ? 'Confirm Permanent Delete' : 'Confirm Suspend';
-        const list = document.getElementById('actionConfirmList');
-        list.innerHTML = '';
-        if (isWholeCluster) {
-            const li = document.createElement('li'); li.textContent = 'Whole cluster will be affected.'; list.appendChild(li);
-        } else {
-            branchNames.forEach(n => { const li = document.createElement('li'); li.textContent = n; list.appendChild(li); });
-        }
-        document.getElementById('actionConfirmCount').textContent = isWholeCluster ? (document.querySelectorAll(`.branch-checkbox[data-cluster='${clusterCode}']`).length) : branchNames.length;
-        document.getElementById('actionConfirmCluster').value = clusterCode;
-        document.getElementById('actionConfirmType').value = action;
-        const modal = new bootstrap.Modal(document.getElementById('actionConfirmModal'));
-        modal.show();
-    }
-
-    async function performDeleteConfirmed() {
-        if (!deleteTargetCode) return;
-        const payload = { UniqueCode: deleteTargetCode, Action: 'DELETE', RdcAssignments: {} };
-        const response = await fetch('/HeadOffice/ManageClusterState', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify(payload)
-        });
-        var modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-        modal.hide();
-        if (response.ok) {
-            // open email modal prefilled
-            document.getElementById('emailModalType').value = 'delete';
-            document.getElementById('emailModalCode').value = deleteTargetCode;
-            document.getElementById('emailBranchIds').value = JSON.stringify([]);
-            const card = document.querySelector(`.cluster-card[data-code='${deleteTargetCode}']`);
-            const to = card?.getAttribute('data-email') || '';
-            document.getElementById('emailTo').value = to;
-            document.getElementById('emailFrom').value = '@User?.Identity?.Name';
-            document.getElementById('emailSubject').value = 'Notification: Deletion of Your Registration Cluster';
-            document.getElementById('emailMessage').value = 'Your registration cluster has been permanently deleted.';
-            const em = new bootstrap.Modal(document.getElementById('emailModal'));
-            em.show();
-            showMessage('success', 'Cluster deleted. You may notify the customer via email.');
-        } else {
-            const txt = await response.text();
-            showMessage('danger', 'Delete failed: ' + txt);
-        }
-    }
-</script>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body">
-                <p class="fw-bold">Permanent Delete</p>
-                <p>This will permanently remove all branches in the cluster. This action cannot be undone. Continue?</p>
-                <div class="text-end">
-                    <button class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger" onclick="performDeleteConfirmed()">Delete</button>
+    <!-- Email Composition Modal -->
+    <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Notification Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="emailModalType" />
+                    <input type="hidden" id="emailModalCode" />
+                    <input type="hidden" id="emailBranchIds" />
+                    <div id="emailModalErrors" class="alert alert-danger d-none">
+                        <ul id="emailModalErrorsList" class="mb-0"></ul>
+                    </div>
+                    <div class="mb-2">
+                        <label>To</label>
+                        <input type="email" id="emailTo" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>From</label>
+                        <input type="email" id="emailFrom" class="form-control" value="@User?.Identity?.Name" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Subject</label>
+                        <input type="text" id="emailSubject" class="form-control" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Message</label>
+                        <textarea id="emailMessage" class="form-control" rows="6"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label>Preview</label>
+                        <div id="emailPreview" class="border p-2 bg-white" style="min-height:120px; overflow:auto;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-primary me-2" onclick="loadEmailPreview()">Refresh Preview</button>
+                    <button type="button" class="btn btn-primary" onclick="sendEmailFromModal()">Send Email</button>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
-<!-- Email Composition Modal -->
-<div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Send Notification Email</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="emailModalType" />
-                <input type="hidden" id="emailModalCode" />
-                <input type="hidden" id="emailBranchIds" />
-                <div id="emailModalErrors" class="alert alert-danger d-none">
-                    <ul id="emailModalErrorsList" class="mb-0"></ul>
-                </div>
-                <div class="mb-2">
-                    <label>To</label>
-                    <input type="email" id="emailTo" class="form-control" />
-                </div>
-                <div class="mb-2">
-                    <label>From</label>
-                    <input type="email" id="emailFrom" class="form-control" value="@User?.Identity?.Name" />
-                </div>
-                <div class="mb-2">
-                    <label>Subject</label>
-                    <input type="text" id="emailSubject" class="form-control" />
-                </div>
-                <div class="mb-2">
-                    <label>Message</label>
-                    <textarea id="emailMessage" class="form-control" rows="6"></textarea>
-                </div>
-                <div class="mb-2">
-                    <label>Preview</label>
-                    <div id="emailPreview" class="border p-2 bg-white" style="min-height:120px; overflow:auto;"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-outline-primary me-2" onclick="loadEmailPreview()">Refresh Preview</button>
-                <button type="button" class="btn btn-primary" onclick="sendEmailFromModal()">Send Email</button>
-            </div>
-        </div>
-    </div>
-</div>
+@section Scripts {
+    <script>
+        const antiToken = '@Antiforgery.GetAndStoreTokens(Context).RequestToken';
 
-<script>
-    function sendEmailFromModal() {
-        const type = document.getElementById('emailModalType').value;
-        const code = document.getElementById('emailModalCode').value;
-        const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
-        const to = document.getElementById('emailTo').value;
-        const from = document.getElementById('emailFrom').value;
-        const subject = document.getElementById('emailSubject').value;
-        const message = document.getElementById('emailMessage').value;
-        // clear previous errors
-        const errEl = document.getElementById('emailModalErrors');
-        const errList = document.getElementById('emailModalErrorsList');
-        errEl.classList.add('d-none');
-        errList.innerHTML = '';
-
-        // client-side validation
-        const validationErrors = validateEmailModalInputs({ to, from, subject, message });
-        if (validationErrors.length) {
-            validationErrors.forEach(e => { const li = document.createElement('li'); li.textContent = e; errList.appendChild(li); });
-            errEl.classList.remove('d-none');
-            return;
+        function toggleView(type) {
+            loadTab(type, 'pending');
+            document.getElementById('btnPBOS').checked = type === 'pbos';
+            document.getElementById('btnPBOM').checked = type === 'pbom';
         }
 
-        fetch('/HeadOffice/SendClusterEmail', {
-            method: 'POST',
-            cache: 'no-store',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify({ UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds })
-        }).then(async (r) => {
-            if (r.ok) {
-                showMessage('success', 'Email sent');
-                var modal = bootstrap.Modal.getInstance(document.getElementById('emailModal'));
-                modal.hide();
+        async function loadTab(type, tab) {
+            const actionName = type === 'pbos' ? 'GetPbosClusters' : 'GetPbomClusters';
+            const url = `/HeadOffice/${actionName}?tab=${encodeURIComponent(tab)}`;
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) {
+                const html = await resp.text();
+                const paneId = tab === 'pending' ? 'clusterPendingContent' : tab === 'active' ? 'clusterActiveContent' : tab === 'suspended' ? 'clusterSuspendedContent' : 'clusterDisapprovedContent';
+                const pane = document.getElementById(paneId);
+                if (pane) pane.innerHTML = html;
             } else {
-                const text = await r.text();
-                try {
-                    const json = JSON.parse(text);
-                    if (json.errors && Array.isArray(json.errors)) {
-                        json.errors.forEach(e => {
-                            const li = document.createElement('li'); li.textContent = e; errList.appendChild(li);
-                        });
-                        errEl.classList.remove('d-none');
-                    } else {
-                        const li = document.createElement('li'); li.textContent = text || 'Server error'; errList.appendChild(li);
-                        errEl.classList.remove('d-none');
-                    }
-                } catch {
-                    const li = document.createElement('li'); li.textContent = text || 'Server error'; errList.appendChild(li);
-                    errEl.classList.remove('d-none');
-                }
+                console.error('Failed to load clusters tab');
             }
-        }).catch(err => {
-            const li = document.createElement('li'); li.textContent = err.message || 'Network error'; errList.appendChild(li);
-            errEl.classList.remove('d-none');
-        });
-    }
-
-    async function loadEmailPreview() {
-        const type = document.getElementById('emailModalType').value;
-        const code = document.getElementById('emailModalCode').value;
-        const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
-        const to = document.getElementById('emailTo').value;
-        const from = document.getElementById('emailFrom').value;
-        const subject = document.getElementById('emailSubject').value;
-        const message = document.getElementById('emailMessage').value;
-
-        const payload = { UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds };
-        const resp = await fetch('/HeadOffice/PreviewClusterEmail', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': antiToken
-            },
-            body: JSON.stringify(payload)
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            document.getElementById('emailPreview').innerHTML = data.Html || '';
-        } else {
-            document.getElementById('emailPreview').innerHTML = '<em>Preview not available</em>';
         }
-    }
 
-    function validateEmailModalInputs(values) {
-        const lang = (navigator.language || navigator.userLanguage || 'en').split('-')[0];
-        const msgs = {
-            en: {
-                toRequired: 'Recipient email is required.',
-                fromRequired: 'Sender email is required.',
-                toInvalid: 'Recipient email is invalid.',
-                fromInvalid: 'Sender email is invalid.',
-                subjectRequired: 'Subject is required.',
-                messageRequired: 'Message is required.',
-                messageShort: 'Message is too short.'
-            },
-            si: {
-                toRequired: 'ලැබුණු විද්‍යුත් තැපැල් ලිපිනය අවශ්‍ය වේ.',
-                fromRequired: 'යවන人的 විද්‍යුත් තැපැල් ලිපිනය අවශ්‍ය වේ.',
-                toInvalid: 'ලැබුණු විද්‍යුත් තැපැල් ලිපිනය වලංගු නොවේ.',
-                fromInvalid: 'යවන人的 විද්‍යුත් තැපැල් ලිපිනය වලංගු නොවේ.',
-                subjectRequired: 'විෂයය අවශ්‍ය වේ.',
-                messageRequired: 'පණිවිඩය අවශ්‍ය වේ.',
-                messageShort: 'පණිවිඩය කෙටියි.'
+        function refreshCurrentTab() {
+            const activeTab = document.querySelector('#clusterTabs .nav-link.active').getAttribute('href').replace('#cluster','').toLowerCase();
+            const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
+            loadTab(type, activeTab);
+        }
+
+        // minimal helper placeholders to keep client-side behavior
+        function sendEmailFromModal() {
+            const type = document.getElementById('emailModalType').value;
+            const code = document.getElementById('emailModalCode').value;
+            const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
+            const to = document.getElementById('emailTo').value;
+            const from = document.getElementById('emailFrom').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            fetch('/HeadOffice/SendClusterEmail', {
+                method: 'POST',
+                cache: 'no-store',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiToken
+                },
+                body: JSON.stringify({ UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds })
+            }).then(async (r) => {
+                if (r.ok) {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('emailModal'));
+                    if (modal) modal.hide();
+                } else {
+                    console.error('Email send failed');
+                }
+            }).catch(err => console.error(err));
+        }
+
+        async function loadEmailPreview() {
+            const type = document.getElementById('emailModalType').value;
+            const code = document.getElementById('emailModalCode').value;
+            const branchIds = JSON.parse(document.getElementById('emailBranchIds').value || '[]');
+            const to = document.getElementById('emailTo').value;
+            const from = document.getElementById('emailFrom').value;
+            const subject = document.getElementById('emailSubject').value;
+            const message = document.getElementById('emailMessage').value;
+
+            const payload = { UniqueCode: code, Type: type, To: to, From: from, Subject: subject, Message: message, BranchIds: branchIds };
+            const resp = await fetch('/HeadOffice/PreviewClusterEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiToken
+                },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                document.getElementById('emailPreview').innerHTML = data.Html || '';
+            } else {
+                document.getElementById('emailPreview').innerHTML = '<em>Preview not available</em>';
             }
-        };
-        const t = msgs[lang] || msgs.en;
-        const errors = [];
-        const emailRegex = new RegExp('^[^\\s\\u0040]+\\u0040[^\\s\\u0040]+\\.[^\\s\\u0040]+$');
+        }
 
-        if (!values.to || !values.to.trim()) errors.push(t.toRequired);
-        else if (!emailRegex.test(values.to.trim())) errors.push(t.toInvalid);
-
-        if (!values.from || !values.from.trim()) errors.push(t.fromRequired);
-        else if (!emailRegex.test(values.from.trim())) errors.push(t.fromInvalid);
-
-        if (!values.subject || !values.subject.trim()) errors.push(t.subjectRequired);
-        if (!values.message || !values.message.trim()) errors.push(t.messageRequired);
-        else if ((values.message || '').trim().length < 10) errors.push(t.messageShort);
-
-        return errors;
-    }
-</script>
+        document.addEventListener('DOMContentLoaded', function(){
+            loadTab('pbos','pending');
+            document.querySelectorAll('#clusterTabs a[data-bs-toggle="tab"]').forEach(a=>{
+                a.addEventListener('shown.bs.tab', function(e){
+                    const tabKey = e.target.getAttribute('href').replace('#cluster','').toLowerCase();
+                    const type = document.getElementById('btnPBOS').checked ? 'pbos' : 'pbom';
+                    loadTab(type, tabKey);
+                });
+            });
+        });
+    </script>
+}
