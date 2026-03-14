@@ -25,8 +25,7 @@ namespace ISDN_Distribution.Models
         public bool IsReturnable =>
           !string.IsNullOrEmpty(Status) &&
           Status.Equals("Delivered", StringComparison.OrdinalIgnoreCase) &&
-          (DateTime.Now - EstimatedDelivery).TotalHours <= 72 &&
-          (DateTime.Now - EstimatedDelivery).TotalHours >= 0;
+          (Math.Max(0, (DateTime.Now - EstimatedDelivery).TotalHours)) <= 72;
     }
 
     public class OrderItemDto

@@ -27,6 +27,7 @@ namespace ISDN_Distribution.Repositories
                 .Where(o => o.CustomerId == customer.CustomerId && o.RdcId == customer.RdcId)
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Deliveries) // <--- CRITICAL FIX: Add this line
+                .Include(o => o.OrderStatusLogs)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
@@ -78,6 +79,7 @@ namespace ISDN_Distribution.Repositories
                 .Where(o => o.CustomerId.HasValue && branchIds.Contains(o.CustomerId.Value))
                 .Include(o => o.OrderItems).ThenInclude(oi => oi.Product)
                 .Include(o => o.Deliveries)
+                .Include(o => o.OrderStatusLogs)
                 .OrderByDescending(o => o.OrderDate)
                 .ToListAsync();
 
