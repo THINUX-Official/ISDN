@@ -1,0 +1,63 @@
+@model IEnumerable<ISDN.ViewModels.CustomerClusterDto>
+
+<div class="table-responsive mt-3">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Registration Code</th>
+                <th>Business Info</th>
+                <th>Contact Person</th>
+                <th>Location</th>
+                <th>Assigned RDC</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var customer in Model)
+                {
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">@(string.IsNullOrEmpty(customer.RegistrationCode) ? "N/A" : customer.RegistrationCode)</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold">@customer.BusinessName</div>
+                            <div class="small text-muted">@customer.BusinessType • @customer.BranchName</div>
+                        </td>
+                        <td>
+                            <div>@customer.FirstName @customer.LastName</div>
+                            <div class="small text-muted">@customer.Email</div>
+                        </td>
+                        <td>
+                            <div class="small">@customer.StreetAddress</div>
+                            <div class="small fw-bold">@customer.City @customer.ZipCode</div>
+                        </td>
+                        <td>
+                            <span class="badge @(customer.RdcId.HasValue ? "bg-info text-dark" : "bg-warning text-dark")">
+                                @customer.RdcName
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @{
+                                var jsonStr = System.Net.WebUtility.UrlEncode(System.Text.Json.JsonSerializer.Serialize(customer));
+                            }
+                            <button class="btn btn-sm btn-outline-primary rounded-circle" onclick="openEditModal('@jsonStr')" title="Edit Details">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="fas fa-info-circle mb-2 fa-2x"></i><br />
+                        No customers found for this category.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -265,16 +265,28 @@
                                 .OrderByDescending(d => d.DeliveryDate)
                                 .FirstOrDefault();
 
-                            // Determine the actual delivery timestamp (prefer delivery record, then estimated, then order date)
-                            var deliveryTime = actualDelivery?.DeliveryDate ?? order.EstimatedDeliveryAt ?? order.OrderDate;
+                            var statusDeliveredLog = order.OrderStatusLogs?
+                                .Where(l => l.Status != null && l.Status.ToUpper() == "DELIVERED")
+                                .OrderByDescending(l => l.CreatedAt)
+                                .FirstOrDefault();
+
+                            // Determine the actual delivery timestamp (prefer delivery record, then status log, then estimated, then order date)
+                            var deliveryTime = actualDelivery?.DeliveryDate ?? statusDeliveredLog?.CreatedAt ?? order.EstimatedDeliveryAt ?? order.OrderDate;
 
                             // Normalize to UTC because stored dates are UTC in the DB
-                            var deliveryUtc = DateTime.SpecifyKind(deliveryTime, DateTimeKind.Utc);
+                            var deliveryUtc = deliveryTime.Kind == DateTimeKind.Unspecified 
+                                              ? DateTime.SpecifyKind(deliveryTime, DateTimeKind.Utc) 
+                                              : deliveryTime.ToUniversalTime();
+
                             var nowUtc = DateTime.UtcNow;
-                            var hoursPassed = (nowUtc - deliveryUtc).TotalHours;
+
+                            // If it's a recently delivered order using an estimated future timestamp, 
+                            // prevent negative passed hours and let it start exactly at a full 72 hours window
+                            var rawHoursPassed = (nowUtc - deliveryUtc).TotalHours;
+                            var hoursPassed = rawHoursPassed < 0 ? 0 : rawHoursPassed;
                             var remainingHours = 72 - (int)Math.Floor(hoursPassed);
 
-                            if (hoursPassed >= 0 && hoursPassed <= 72)
+                            if (hoursPassed <= 72)
                             {
                                 <button class="btn btn-outline-danger btn-sm mt-3 px-4 rounded-pill"
                                         onclick='openReturnModal("@order.OrderId", @Json.Serialize(order.OrderItems.Select(i => new { id = i.OrderItemId, name = i.Product?.ProductName, qty = i.Quantity })))'>

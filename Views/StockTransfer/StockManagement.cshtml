@@ -1,0 +1,217 @@
+@model ISDN.ViewModels.StockTransferDashboardViewModel
+@{
+    ViewData["Title"] = "Stock Management - Inter-RDC Transfer";
+}
+
+<div class="container-fluid py-4 min-vh-100 bg-light">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fas fa-exchange-alt text-primary me-2"></i> Inter-RDC Stock Relocation
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="/RdcStaff/Dashboard" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Logistics & Rebalancing</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-warning shadow-sm rounded-pill px-4 fw-bold me-2" data-bs-toggle="modal" data-bs-target="#liquidateModal">
+                <i class="fas fa-gavel me-1"></i> Emergency Redistribute
+            </button>
+            <button class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#requestModal">
+                <i class="fas fa-hand-holding-box me-1"></i> Request Stock
+            </button>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white p-4 rounded-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-start">
+                        <h6 class="text-uppercase small fw-bold text-white-50 shadow-sm-soft">Pending Outgoing</h6>
+                        <h2 class="mb-0 fw-bold">@Model.OutgoingTransfers.Count</h2>
+                    </div>
+                    <i class="fas fa-truck-loading fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-info text-white p-4 rounded-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-start">
+                        <h6 class="text-uppercase small fw-bold text-white-50 shadow-sm-soft">Incoming Transfers</h6>
+                        <h2 class="mb-0 fw-bold">@Model.IncomingTransfers.Count</h2>
+                    </div>
+                    <i class="fas fa-dolly fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-danger text-white p-4 rounded-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="text-start">
+                        <h6 class="text-uppercase small fw-bold text-white-50 shadow-sm-soft">Low Stock Alerts</h6>
+                        <h2 class="mb-0 fw-bold">@Model.LowStockAlertsCount</h2>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Transfers Table -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+            <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-list-ul text-primary me-2"></i>Active Transfer Operations</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-3 border-0">Transfer ID</th>
+                            <th class="border-0">Product</th>
+                            <th class="border-0">Source RDC</th>
+                            <th class="border-0">Destination RDC</th>
+                            <th class="border-0">Qty</th>
+                            <th class="border-0">Status</th>
+                            <th class="border-0 text-center">Progress</th>
+                            <th class="pe-3 border-0 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.PendingTransfers.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No active transfers to display.</td>
+                            </tr>
+                        }
+                        
+                        @foreach (var transfer in Model.PendingTransfers)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">#TRX-@transfer.TransferId</td>
+                                <td>
+                                    <div class="fw-medium text-dark">@transfer.Product?.ProductName</div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">RDC-@transfer.FromRdcId: @transfer.FromRdc?.Region</span></td>
+                                <td><span class="badge bg-light text-dark border">RDC-@transfer.ToRdcId: @transfer.ToRdc?.Region</span></td>
+                                <td><span class="fw-bold text-primary">@transfer.Quantity</span></td>
+                                <td>
+                                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm"><i class="fas fa-clock me-1"></i>PENDING</span>
+                                </td>
+                                <td class="text-center" style="width: 25%">
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 50%"></div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">In Transit</small>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <form asp-action="CompleteTransfer" method="post" class="d-inline">
+                                        <input type="hidden" name="transferId" value="@transfer.TransferId" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                                            <i class="fas fa-check-circle me-1"></i> Mark Arrived
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Emergency Redistribute -->
+<div class="modal fade" id="liquidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-warning border-0 text-dark">
+                <h5 class="modal-title fw-bold"><i class="fas fa-gavel me-2"></i>Emergency Liquidation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="LiquidateRdc" method="post">
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-4">This action takes all stock from a deactivated RDC and splits it evenly across all active RDCs in the network.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Deactivated RDC</label>
+                        <select name="rdcId" class="form-select form-select-lg rounded-3" required>
+                            <option value="">-- Choose RDC --</option>
+                            @foreach (var rdc in Model.DeactivatedRdcs)
+                            {
+                                <option value="@rdc.RdcId">RDC @rdc.RdcId - @rdc.Region (Deactivated)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Trigger Liquidation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Request Stock -->
+<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header bg-primary border-0 text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-hand-holding-box me-2"></i>Request Inter-RDC Stock</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreateTransfer" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Requesting To (Destination RDC)</label>
+                        <select name="ToRdcId" class="form-select rounded-3" required>
+                            <option value="">-- Choose RDC --</option>
+                            @foreach (var rdc in Model.ActiveRdcs)
+                            {
+                                <option value="@rdc.RdcId">RDC @rdc.RdcId - @rdc.Region</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Taking From (Source RDC)</label>
+                        <select name="FromRdcId" class="form-select rounded-3" required>
+                            <option value="">-- Choose RDC --</option>
+                            @foreach (var rdc in Model.ActiveRdcs)
+                            {
+                                <option value="@rdc.RdcId">RDC @rdc.RdcId - @rdc.Region</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Product</label>
+                        <select name="ProductId" class="form-select rounded-3" required>
+                            <option value="">-- Choose Product --</option>
+                            @if (ViewBag.Products != null)
+                            {
+                                @foreach (var prod in ViewBag.Products)
+                                {
+                                    <option value="@prod.ProductId">@prod.ProductName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Quantity</label>
+                        <input type="number" name="Quantity" class="form-control rounded-3" min="1" required placeholder="Enter amount to transfer" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Initiate Transfer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
