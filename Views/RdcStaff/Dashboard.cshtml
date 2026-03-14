@@ -50,12 +50,36 @@
     </div>
 
     <div class="row">
+        <!-- Quick Actions Panel -->
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
-                <div class="card-body">
+                <style>
+                    .ghost-scroll-container {
+                        max-height: 165px;
+                        overflow-y: hidden;
+                    }
+                    .ghost-scroll-container:hover {
+                        overflow-y: auto;
+                    }
+                    /* Custom Scrollbar */
+                    .ghost-scroll-container::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .ghost-scroll-container::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .ghost-scroll-container::-webkit-scrollbar-thumb {
+                        background: rgba(0, 0, 0, 0.2);
+                        border-radius: 3px;
+                    }
+                    .ghost-scroll-container::-webkit-scrollbar-thumb:hover {
+                        background: rgba(0, 0, 0, 0.4);
+                    }
+                </style>
+                <div class="card-body ghost-scroll-container">
                     <a asp-action="Inventory" class="btn btn-outline-success w-100 mb-2">
                         <i class="fas fa-warehouse"></i> View Inventory
                     </a>
@@ -63,10 +87,264 @@
                         <i class="fas fa-shopping-cart"></i> View Orders
                     </a>
                     <a asp-controller="Products" asp-action="Manage" class="btn btn-outline-warning w-100 mb-2">
-                        <i class="fas fa-plus-circle"></i> Manage Products
+                        <i class="fas fa-plus-circle"></i> Add Product
                     </a>
+
+                    <hr class="mt-2 mb-3"/>
+
+                    <a href="#" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-project-diagram"></i> View order lifecycles
+                    </a>
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="generateReplenishment()">
+                        <i class="fas fa-sync-alt"></i> Stock Replenishment requests
+                    </button>
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="recommendTransfers()">
+                        <i class="fas fa-truck-loading"></i> Inter-RDC Transfer Recommendations
+                    </button>
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="predictShortages()">
+                        <i class="fas fa-chart-pie"></i> Shortage Prediction
+                    </button>
+
+                    <button class="btn btn-outline-danger w-100 mb-2" onclick="redistributeStock()">
+                        <i class="fas fa-share-alt"></i> Redistribute RDC Stock
+                    </button>
+
+                    <button class="btn btn-outline-secondary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#packRequestModal">
+                        <i class="fas fa-box-open"></i> Request Assisting RDC to Pack
+                    </button>
+
+                    <a href="#" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-undo-alt"></i> Return Request Processing
+                    </a>
+                    <a href="#" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-clipboard-check"></i> Return Request Validity Check
+                    </a>
+
+                    <button class="btn btn-outline-dark w-100 mb-2" data-bs-toggle="modal" data-bs-target="#controlTowerModal">
+                        <i class="fas fa-satellite-dish"></i> Open Live Control Tower
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modals for new behaviors can be appended here -->
+
+<!-- Live Control Tower Modal -->
+<div class="modal fade" id="controlTowerModal" tabindex="-1" aria-labelledby="controlTowerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="controlTowerModalLabel"><i class="fas fa-satellite-dish"></i> Live Control Tower</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <span class="badge bg-danger pulse-alert d-none mb-3" id="lowStockAlertBadge">Low Stock Alerts!</span>
+        <div id="islandMap" class="text-center bg-light border p-4 mb-3" style="min-height: 200px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;">
+            [Island Map Simulation: RDC Locations & Live Stock Visibility]
+        </div>
+        <div id="liveAlertsContainer">
+            <h6><i class="fas fa-bell text-warning"></i> Recent Alerts & Notifications</h6>
+            <ul class="list-group list-group-flush" id="alertsList">
+                <li class="list-group-item text-muted small">No recent alerts.</li>
+            </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Drop RDC Modal -->
+<div class="modal fade" id="suspendRdcModal" tabindex="-1" aria-labelledby="suspendRdcModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form asp-action="SuspendRdc" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="suspendRdcModalLabel">Suspend RDC</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="suspendRdcId" class="form-label">RDC ID to Suspend</label>
+                <input type="number" class="form-control" id="suspendRdcId" name="suspendRdcId" min="1" required>
+            </div>
+            <p class="text-danger small">Warning: Suspending an RDC means it cannot be operated until re-activated.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">Suspend</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add RDC Modal -->
+<div class="modal fade" id="addRdcModal" tabindex="-1" aria-labelledby="addRdcModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form asp-action="AddRdc" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addRdcModalLabel">Add New RDC</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="rdcName" class="form-label">RDC Name</label>
+                <input type="text" class="form-control" id="rdcName" name="rdcName" required>
+            </div>
+            <div class="mb-3">
+                <label for="region" class="form-label">Region</label>
+                <input type="text" class="form-control" id="region" name="region" required>
+            </div>
+            <div class="mb-3">
+                <label for="address" class="form-label">Address</label>
+                <input type="text" class="form-control" id="address" name="address">
+            </div>
+            <div class="mb-3">
+                <label for="contactNumber" class="form-label">Contact Number</label>
+                <input type="text" class="form-control" id="contactNumber" name="contactNumber">
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add RDC</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Pack Request Modal -->
+<div class="modal fade" id="packRequestModal" tabindex="-1" aria-labelledby="packRequestModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="packRequestForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="packRequestModalLabel">Request Assisting RDC to Pack Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="orderId" class="form-label">Pending Order ID</label>
+                <input type="number" class="form-control" id="orderId" min="1" required>
+            </div>
+            <div class="mb-3">
+                <label for="assistingRdcId" class="form-label">Assisting RDC ID</label>
+                <input type="number" class="form-control" id="assistingRdcId" min="1" required>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" onclick="submitPackRequest()">Send Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            fetchLiveAlerts();
+            setInterval(fetchLiveAlerts, 60000); // refresh every minute
+
+            fetchMapData();
+        });
+
+        function fetchLiveAlerts() {
+            $.get('@Url.Action("GetLiveAlerts", "RdcStaff")', function(res) {
+                if (res.success && res.alerts.length > 0) {
+                    $('#lowStockAlertBadge').removeClass('d-none');
+                    const alertHtml = res.alerts.map(a => `<li class="list-group-item text-danger small"><i class="fas fa-exclamation-triangle"></i> ${a}</li>`).join('');
+                    $('#alertsList').html(alertHtml);
+                    
+                    // Trigger free notification (e.g., using OneSignal or simple browser notification API if permitted)
+                    if (Notification && Notification.permission !== "granted") {
+                        Notification.requestPermission();
+                    } else if (Notification && Notification.permission === "granted") {
+                        new Notification("RDC Alert", { body: res.alerts[0] });
+                    }
+                } else {
+                    $('#lowStockAlertBadge').addClass('d-none');
+                    $('#alertsList').html('<li class="list-group-item text-muted small">No recent alerts. Stock is healthy.</li>');
+                }
+            });
+        }
+
+        function fetchMapData() {
+            $.get('@Url.Action("GetMapData", "RdcStaff")', function(res) {
+                if(res.success) {
+                    let mapHtml = '';
+                    res.rdcs.forEach(r => {
+                        let badgeClass = r.isCurrent ? "bg-primary" : "bg-secondary";
+                        mapHtml += `<span class="badge ${badgeClass} m-1" style="font-size: 14px;"><i class="fas fa-map-marker-alt"></i> ${r.name} (${r.id})</span>`;
+                    });
+                    $('#islandMap').html(`<div><h6 class="text-muted mb-3">Live RDC Centers</h6>${mapHtml}</div>`);
+                }
+            });
+        }
+
+        function generateReplenishment() {
+            $.post('@Url.Action("GenerateReplenishment", "RdcStaff")', function(res) {
+                if (res.success) {
+                    alert(res.message);
+                } else {
+                    alert("Failed to auto-generate replenishment.");
+                }
+            });
+        }
+
+        function recommendTransfers() {
+            $.get('@Url.Action("RecommendTransfers", "RdcStaff")', function(res) {
+                if (res.success && res.recommendations.length > 0) {
+                    let msg = "Transfer Recommendations:\n\n";
+                    res.recommendations.forEach(r => {
+                        msg += `- Request ${r.suggestedQuantity} of '${r.product}' from ${r.fromRdc}\n`;
+                    });
+                    alert(msg);
+                } else {
+                    alert("No transfer recommendations available at this time.");
+                }
+            });
+        }
+
+        function predictShortages() {
+            $.get('@Url.Action("PredictShortages", "RdcStaff")', function(res) {
+                if (res.success && res.predictions.length > 0) {
+                    let msg = "Shortage Predictions:\n\n";
+                    res.predictions.forEach(p => {
+                        msg += `- ${p.product} (est. out of stock in ${p.daysToStockout} days)\n`;
+                    });
+                    alert(msg);
+                } else {
+                    alert("Stock levels appear healthy. No imminent shortages.");
+                }
+            });
+        }
+
+        function redistributeStock() {
+            let rdcId = prompt("Enter RDC ID to drop and redistribute its stock:");
+            if (rdcId) {
+                $.post('@Url.Action("RedistributeStock", "RdcStaff")', { dropRdcId: rdcId }, function() {
+                    alert("Stock redistribution initiated.");
+                    location.reload();
+                });
+            }
+        }
+
+        function submitPackRequest() {
+            const orderId = $('#orderId').val();
+            const targetId = $('#assistingRdcId').val();
+            $.post('@Url.Action("RequestPack", "RdcStaff")', { orderId: orderId, assistingRdcId: targetId }, function(res) {
+                if(res.success) {
+                    alert(res.message);
+                    $('#packRequestModal').modal('hide');
+                } else {
+                    alert(res.message);
+                }
+            });
+        }
+    </script>
+}

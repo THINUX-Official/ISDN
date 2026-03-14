@@ -1,0 +1,94 @@
+﻿@using ISDN.Models.ViewModels
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Primary Business Owners Management</h2>
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="viewType" id="btnPBOS" checked>
+            <label class="btn btn-outline-primary" for="btnPBOS" onclick="toggleView('pbos')">PBOS (Single)</label>
+
+            <input type="radio" class="btn-check" name="viewType" id="btnPBOM">
+            <label class="btn btn-outline-primary" for="btnPBOM" onclick="toggleView('pbom')">PBOM (Multi)</label>
+        </div>
+    </div>
+
+    <div id="clusterContainer" class="row">
+        @{
+            var pbomList = (ViewBag.PBOM as List<CustomerClusterViewModel>) ?? new List<CustomerClusterViewModel>();
+        }
+
+        @if (!pbomList.Any())
+        {
+            <div class="col-12 text-center py-5">
+                <div class="card p-5 border-0 shadow-sm bg-light">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4>No Clusters Found</h4>
+                    <p class="text-muted">There are currently no PBO registration clusters pending approval.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var cluster in pbomList)
+            {
+                <div class="col-md-6 cluster-card" data-type="pbom">
+                    <div class="card shadow-sm mb-4 border-primary">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between">
+                            <strong>@cluster.BusinessName</strong>
+                            <span>Branches: @cluster.Branches.Count</span>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                @foreach (var b in cluster.Branches)
+                                {
+                                    <tr>
+                                        <td>@b.BranchName</td>
+                                        <td>@b.City</td>
+                                        <td>
+                                            <select class="form-select rdc-select" data-id="@b.CustomerId">
+                                                <option value="">Select RDC</option>
+                                                @foreach (var r in (IEnumerable<dynamic>)ViewBag.Rdcs)
+                                                {
+                                                    <option value="@r.RdcId">@r.RdcName</option>
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                            <button class="btn btn-success w-100 mt-2" onclick="approveCluster('@cluster.UniqueCode')">
+                                Approve Entire Cluster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    function toggleView(type) {
+        document.querySelectorAll('.cluster-card').forEach(card => {
+            card.style.display = (card.getAttribute('data-type') === type) ? 'block' : 'none';
+        });
+    }
+
+    async function approveCluster(code) {
+        let assignments = {};
+        document.querySelectorAll('.rdc-select').forEach(sel => {
+            if(sel.value) assignments[sel.dataset.id] = sel.value;
+        });
+
+        const response = await fetch('/HeadOffice/ApproveCluster', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': '@Antiforgery.GetAndStoreTokens(Context).RequestToken'
+            },
+            body: JSON.stringify({ uniqueCode: code, branchRdcAssignments: assignments })
+        });
+        if(response.ok) location.reload();
+    }
+</script>

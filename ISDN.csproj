@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <!-- MySQL Database Provider -->
+    <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.*" />
     
     <!-- JWT Authentication -->

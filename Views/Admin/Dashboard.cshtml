@@ -65,9 +65,19 @@
                     <a asp-action="AuditLogs" class="btn btn-outline-warning w-100 mb-2">
                         <i class="fas fa-clipboard-list"></i> View Audit Logs
                     </a>
-                    <a href="#" class="btn btn-outline-info w-100 mb-2">
-                        <i class="fas fa-user-shield"></i> Manage Roles & Permissions
+                    <a class="btn btn-info w-100 mb-2" data-bs-toggle="collapse" href="#rolePermissionsCollapse" role="button" aria-expanded="false" aria-controls="rolePermissionsCollapse">
+                        <i class="fas fa-user-shield text-dark"></i> <span class="text-dark">Manage Roles & Permissions</span>
                     </a>
+                    <div class="collapse" id="rolePermissionsCollapse">
+                        <div class="card card-body border-0 p-2 mb-2 bg-light">
+                            <a href="#" class="btn btn-outline-dark w-100 mb-2">
+                                <i class="fas fa-plus-circle"></i> Add New RDC
+                            </a>
+                            <a href="#" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-pause-circle"></i> Hold/Suspend RDC
+                            </a>
+                        </div>
+                    </div>
                     <a asp-controller="ManageDashboard" asp-action="Index" class="btn btn-outline-dark w-100 mb-2">
                         <i class="fas fa-chart-line"></i> Dashboard Manage & Report Generator
                     </a>

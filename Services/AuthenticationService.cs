@@ -33,42 +33,58 @@ namespace ISDN.Services
         /// Authenticate user and generate JWT token
         /// </summary>
         public async Task<(bool Success, string Token, User? User, string Message)> LoginAsync(
-            string email, string password, string ipAddress)
+    string email, string password, string ipAddress)
         {
             try
             {
-                // Normalize email input: trim whitespace and convert to lowercase
                 var normalizedEmail = email?.Trim().ToLower();
-                
+
                 if (string.IsNullOrWhiteSpace(normalizedEmail))
                 {
-                    await _auditLogService.LogActionAsync(0, "LOGIN_FAILED", "User", null, 
+                    await _auditLogService.LogActionAsync(0, "LOGIN_FAILED", "User", null,
                         "Failed login attempt: empty email", ipAddress);
                     return (false, string.Empty, null, "Invalid email or password.");
                 }
 
-                // Find user by email (case-insensitive comparison) and check if active
+                // 1. Check for Pending Customers first
+                var pendingCustomer = await _context.Customers
+                    .FirstOrDefaultAsync(c => c.email != null && c.email.ToLower() == normalizedEmail
+                                              && c.registration_status == "PENDING");
+
+                if (pendingCustomer != null)
+                {
+                    // Use your AuthHelper to split the string and get the hash
+                    var (_, hash) = ISDN.Helpers.AuthHelper.ParseTempPasswordHash(pendingCustomer.temp_password_hash);
+
+                    // Verify if the password matches the pending record's hash
+                    if (BCrypt.Net.BCrypt.Verify(password, hash))
+                    {
+                        return (false, string.Empty, null, "Your registration is still pending approval. Please wait for Head Office confirmation.");
+                    }
+                }
+
+                // 2. Existing Active User Logic
                 var user = await _context.Users
                     .Include(u => u.Role)
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.IsActive);
 
                 if (user == null)
                 {
-                    await _auditLogService.LogActionAsync(0, "LOGIN_FAILED", "User", null, 
+                    await _auditLogService.LogActionAsync(0, "LOGIN_FAILED", "User", null,
                         $"Failed login attempt for email: {normalizedEmail}", ipAddress);
                     return (false, string.Empty, null, "Invalid email or password.");
                 }
 
-                // Verify password using BCrypt - DO NOT hash the input password again
+                // Verify password using BCrypt
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
                 if (!isPasswordValid)
                 {
-                    await _auditLogService.LogActionAsync(user.UserId, "LOGIN_FAILED", "User", user.UserId, 
+                    await _auditLogService.LogActionAsync(user.UserId, "LOGIN_FAILED", "User", user.UserId,
                         "Invalid password attempt", ipAddress);
                     return (false, string.Empty, null, "Invalid email or password.");
                 }
 
-                // Generate JWT token
+                // 3. Success: Generate JWT token
                 var token = GenerateJwtToken(user);
 
                 // Store token in database
@@ -89,7 +105,7 @@ namespace ISDN.Services
                 await _context.SaveChangesAsync();
 
                 // Log successful login
-                await _auditLogService.LogActionAsync(user.UserId, "LOGIN_SUCCESS", "User", user.UserId, 
+                await _auditLogService.LogActionAsync(user.UserId, "LOGIN_SUCCESS", "User", user.UserId,
                     $"User logged in successfully", ipAddress);
 
                 return (true, token, user, "Login successful.");

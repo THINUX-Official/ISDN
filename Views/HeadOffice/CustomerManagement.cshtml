@@ -22,7 +22,9 @@
 
     <ul class="nav nav-tabs mb-4" id="customerTabs" role="tablist">
         <li class="nav-item">
-            <a class="nav-link active" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">Pending (@ViewBag.PendingCustomers.Count)</a>
+            <a class="nav-link active" id="pending-tab" data-bs-toggle="tab" href="#pending" role="tab">
+                Pending (@(ViewBag.PendingCustomers != null ? ((List<ISDN.Models.Customer>)ViewBag.PendingCustomers).Count : 0))
+            </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="active-tab" data-bs-toggle="tab" href="#active" role="tab">Active Customers</a>
@@ -64,19 +66,24 @@
 
         <div class="tab-pane fade show active" id="pending" role="tabpanel">
             <input type="text" id="searchPending" onkeyup="filterTable('pendingTable', 'searchPending')" class="form-control mb-3 shadow-sm border-primary" placeholder="Search Pending Businesses...">
-            <table class="table table-hover bg-white border">
+            <table class="table table-hover bg-white border" id="pendingTable">
                 <thead class="table-dark">
                     <tr><th>Name</th><th>Business</th><th>City</th><th>Email</th></tr>
                 </thead>
                 <tbody>
-                    @foreach (var c in ViewBag.PendingCustomers)
+                    @if (ViewBag.PendingCustomers != null)
                     {
-                        <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name')" style="cursor:pointer">
-                            <td>@c.first_name @c.last_name</td>
-                            <td>@c.business_name</td>
-                            <td>@c.city</td>
-                            <td>@c.email</td>
-                        </tr>
+                        @foreach (var c in ViewBag.PendingCustomers)
+                        {
+                            <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name')" style="cursor:pointer">
+                                <td>@c.first_name @c.last_name</td>
+                                <td class="bus-name">
+                                    @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)
+                                </td>
+                                <td>@c.city</td>
+                                <td>@c.email</td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
@@ -92,13 +99,23 @@
                 <tbody>
                     @foreach (var c in ViewBag.ActiveCustomers)
                     {
-                        <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name', '@c.RdcId')" style="cursor:pointer">
+                        // Use the correct property names here (ensure they match your Model exactly)
+                        <tr onclick="populateForm('@c.CustomerId', '@c.first_name @c.last_name', '@c.business_name', '@c.RdcId')">
                             <td>@c.first_name @c.last_name</td>
-                            <td class="bus-name">@c.business_name</td>
+
+                            <td class="bus-name">
+                                @ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)
+                            </td>
+
                             <td><span class="badge bg-info text-dark">RDC ID: @c.RdcId</span></td>
+
                             <td><span class="badge bg-success">Active</span></td>
+
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="openUpdateModal('@c.CustomerId', '@c.business_name', '@c.street_address', '@c.city', '@c.zip_code', '@c.RdcId')">Update</button>
+                                <button class="btn btn-sm btn-primary"
+                                        onclick="openUpdateModal('@c.CustomerId', '@c.business_name', '@c.street_address', '@c.city', '@c.zip_code', '@c.RdcId')">
+                                    Update
+                                </button>
                             </td>
                         </tr>
                     }
@@ -108,7 +125,7 @@
 
         <div class="tab-pane fade" id="disapproved" role="tabpanel">
             <input type="text" id="searchDisapproved" onkeyup="filterTable('disapprovedTable', 'searchDisapproved')" class="form-control mb-3 shadow-sm border-danger" placeholder="Search Disapproved Businesses...">
-            <table class="table table-hover bg-white border">
+            <table class="table table-hover bg-white border" id="disapprovedTable">
                 <thead class="table-danger">
                     <tr><th>Name</th><th>Business</th><th>Disapproved Date</th><th>Action</th></tr>
                 </thead>
@@ -117,7 +134,7 @@
                     {
                         <tr>
                             <td>@c.first_name @c.last_name</td>
-                            <td>@c.business_name</td>
+                            <td class="bus-name">@ISDN.Helpers.AuthHelper.GetValue(c.business_name, 2)</td>
                             <td>@c.DisapprovedAt</td>
                             <td>
                                 <form asp-action="PermanentDeleteCustomer" method="post">
@@ -168,10 +185,25 @@
 @section Scripts {
     <script>
         // 1. Existing populateForm - කිසිම වෙනසක් නැහැ, RdcId එක විතරක් add කළා
+              // Add this helper inside your <script> tag
+              function formatBusinessNameForDisplay(rawString) {
+            if (!rawString) return "N/A";
+
+            // Format: |Type|UserType|BusinessName|BranchName
+            var parts = rawString.split('|');
+
+            // Index 2 is often the Business Type, Index 3 is the Business Name
+            // Adjust this index based on exactly how your AuthHelper.GetValue is mapped
+            return (parts.length > 3) ? parts[2] : rawString;
+        }
+
         function populateForm(id, name, business, rdcId) {
             document.getElementById('selectedId').value = id;
             document.getElementById('dispName').value = name;
-            document.getElementById('dispBusiness').value = business;
+
+            // Use the helper to clean the string before putting it in the input
+            document.getElementById('dispBusiness').value = formatBusinessNameForDisplay(business);
+
             if(rdcId) document.getElementById('rdcDropdown').value = rdcId;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -188,18 +220,8 @@
             myModal.show();
         }
 
-        // 3. Search Filter Logic
-        function filterTable(tableId, inputId) {
-            var input = document.getElementById(inputId).value.toUpperCase();
-            var rows = document.getElementById(tableId).getElementsByTagName("tr");
-            for (var i = 1; i < rows.Length; i++) {
-                var busCell = rows[i].querySelector(".bus-name");
-                if (busCell) {
-                    var text = busCell.textContent || busCell.innerText;
-                    rows[i].style.display = text.toUpperCase().indexOf(input) > -1 ? "" : "none";
-                }
-            }
-        }
+       
+      
 
         // 4. කලින් තිබුණ submitForm එක (කිසිම වෙනසක් නැහැ)
         function submitForm(actionName) {

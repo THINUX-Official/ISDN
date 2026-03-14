@@ -10,66 +10,142 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-<header class="industrial-header">
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand-industrial" asp-area="" asp-controller="Home" asp-action="Index">
-                ISDN
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse">
-                <ul class="navbar-nav ms-auto">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        <li class="nav-item">
-                            <span class="user-badge">@User.Identity.Name</span>
-                        </li>
-                        <li class="nav-item">
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                <button type="submit" class="btn-industrial btn-signout">
-                                    Sign Out
-                                </button>
-                            </form>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="btn-industrial btn-login" asp-controller="Account" asp-action="Login">
-                                Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn-industrial btn-register" asp-controller="Account" asp-action="Register">
-                                Register
-                            </a>
-                        </li>
-                    }
-                </ul>
+    <header class="industrial-header">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand-industrial" asp-area="" asp-controller="Home" asp-action="Index">ISDN</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav ms-auto">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <span class="user-badge">@User.Identity.Name</span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="btn-industrial btn-signout">Sign Out</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="btn-industrial btn-login" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn-industrial btn-register" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#registrationModal">
+                                    Register
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
-</header>
-<div class="container">
-    <main role="main">
-        @RenderBody()
-    </main>
-</div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
 
     <footer class="modern-footer">
-        <div class="container">
-            <div class="footer-content">
-                <span class="footer-text">&copy;ISDN - All Rights Reserved 2026</span>
-            </div>
+        <div class="container text-center">
+            <span class="footer-text">&copy; 2026 - ISDN - All Rights Reserved</span>
         </div>
     </footer>
-    
+
+    <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="modal-title" id="modalTitle">Identity Verification</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="nicStep">
+                        <label class="form-label fw-bold">Enter Sri Lankan NIC Number</label>
+                        <input type="text" id="nicInput" class="form-control mb-3" placeholder="e.g., 951234567V or 199512345678">
+                        <p id="nicError" class="text-danger small d-none">Invalid NIC format. Please try again.</p>
+                        <button class="btn w-100 text-white" style="background: #764ba2;" onclick="validateNIC()">Verify Identity</button>
+                    </div>
+
+                    <div id="typeStep" class="d-none">
+                        <label class="form-label fw-bold mb-3">Select your business profile:</label>
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input ms-0" type="radio" name="userType" id="type1" value="Single" checked>
+                            <label class="form-check-label ms-2" for="type1">
+                                <strong>Single business owner</strong><br />
+                                <small class="text-muted">I own one business in one location.</small>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input ms-0" type="radio" name="userType" id="type2" value="PBOSingle">
+                            <label class="form-check-label ms-2" for="type2">
+                                <strong>Primary owner (Multi-branch)</strong><br />
+                                <small class="text-muted">I have one business with multiple locations.</small>
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input ms-0" type="radio" name="userType" id="type3" value="PBOMulti">
+                            <label class="form-check-label ms-2" for="type3">
+                                <strong>Multi-Business Owner</strong><br />
+                                <small class="text-muted">Owns several business types, each with multiple branches.</small>
+                            </label>
+                        </div>
+                        <button class="btn w-100 text-white mt-3" style="background: #667eea;" onclick="goToRegister()">Continue to Registration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        // Reset modal state on close
+        const regModal = document.getElementById('registrationModal');
+        regModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('nicStep').classList.remove('d-none');
+            document.getElementById('typeStep').classList.add('d-none');
+            document.getElementById('nicInput').value = '';
+            document.getElementById('nicError').classList.add('d-none');
+            document.getElementById('modalTitle').innerText = "Identity Verification";
+        });
+
+        function validateNIC() {
+            const nic = document.getElementById('nicInput').value.trim();
+            const regex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+
+            if (regex.test(nic)) {
+                document.getElementById('nicError').classList.add('d-none');
+                document.getElementById('nicStep').classList.add('d-none');
+                document.getElementById('modalTitle').innerText = "Select Business Profile";
+                document.getElementById('typeStep').classList.remove('d-none');
+            } else {
+                document.getElementById('nicError').classList.remove('d-none');
+            }
+        }
+
+               function goToRegister() {
+            const selected = document.querySelector('input[name="userType"]:checked').value;
+            const nic = document.getElementById('nicInput').value.trim();
+
+            const url = '@Url.Action("StartRegistration", "Account")' + 
+                        '?userType=' + encodeURIComponent(selected) + 
+                        '&nic=' + encodeURIComponent(nic);
+
+            window.location.href = url;
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
