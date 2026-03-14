@@ -58,6 +58,34 @@
                 <div class="card-header bg-primary text-white">
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
+                <style>
+                    .ghost-scroll-container {
+                        max-height: 165px;
+                        overflow-y: hidden;
+                    }
+
+                        .ghost-scroll-container:hover {
+                            overflow-y: auto;
+                        }
+                        /* Custom Scrollbar */
+                        .ghost-scroll-container::-webkit-scrollbar {
+                            width: 6px;
+                        }
+
+                        .ghost-scroll-container::-webkit-scrollbar-track {
+                            background: transparent;
+                        }
+
+                        .ghost-scroll-container::-webkit-scrollbar-thumb {
+                            background: rgba(0, 0, 0, 0.2);
+                            border-radius: 3px;
+                        }
+
+                            .ghost-scroll-container::-webkit-scrollbar-thumb:hover {
+                                background: rgba(0, 0, 0, 0.4);
+                            }
+                </style>
+                <div class="card-body ghost-scroll-container">
                 <div class="card-body">
                     <a asp-action="UserManagement" class="btn btn-outline-primary w-100 mb-2">
                         <i class="fas fa-users"></i> Manage Users
