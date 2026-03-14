@@ -106,6 +106,9 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IRdcOrderRepository, RdcOrderRepository>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+// PayPal service for server-side verification and refunds
+builder.Services.AddHttpClient<ISDN.Services.PayPalService>();
+builder.Services.AddScoped<ISDN.Services.PayPalService>();
 
 // Add HttpContextAccessor for accessing HTTP context in services
 builder.Services.AddHttpContextAccessor();

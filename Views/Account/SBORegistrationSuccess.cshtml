@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Registration Successful";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-card text-center">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+            </div>
+
+            <h1 class="auth-title">Registration Submitted!</h1>
+            <p class="auth-subtitle">Your registration is now pending approval.</p>
+
+            <div class="info-note-turquoise mb-4" style="background: #e0f2f1; border-left: 4px solid #10b981; padding: 15px; border-radius: 4px; color: #065f46; text-align: left;">
+                <i class="fas fa-info-circle"></i>
+                <span class="ms-2">Your account is being reviewed. You will be notified via email once approved.</span>
+            </div>
+
+            <hr />
+
+            <div class="mt-4">
+                <a asp-action="Login" asp-controller="Account" class="btn-auth-submit text-decoration-none d-inline-block">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Reuse the same wrapper/card styles for visual consistency */
+    .auth-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .auth-card {
+        background: #fff;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        max-width: 500px;
+        width: 100%;
+    }
+
+    .btn-auth-submit {
+        background: #764ba2;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+    }
+</style>

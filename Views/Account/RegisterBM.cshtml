@@ -1,0 +1,206 @@
+@model ISDN.ViewModels.RegisterBMViewModel
+
+@{
+    ViewData["Title"] = "Branch Manager Registration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header text-center">
+                <h1 class="auth-title">Branch Manager Registration</h1>
+                <p class="auth-subtitle">Register to manage your assigned branch</p>
+            </div>
+
+            <form asp-action="RegisterBM" asp-controller="Account" method="post" class="auth-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                <input type="hidden" asp-for="InvitationCode" />
+
+                <h5 class="section-divider"><span>Personal Information</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FirstName" class="form-label-custom"></label>
+                        <input asp-for="FirstName" class="form-input-custom" placeholder="John" />
+                        <span asp-validation-for="FirstName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="LastName" class="form-label-custom"></label>
+                        <input asp-for="LastName" class="form-input-custom" placeholder="Doe" />
+                        <span asp-validation-for="LastName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label-custom"></label>
+                        <input asp-for="Email" class="form-input-custom" type="email" placeholder="you@company.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PhoneNumber" class="form-label-custom"></label>
+                        <input asp-for="PhoneNumber" class="form-input-custom" placeholder="0771234567" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <h5 class="section-divider"><span>Select Your Branch</span></h5>
+                <p class="small text-muted mb-3">Please select the specific branch you will be managing from the cluster below.</p>
+                <div class="mb-4">
+                    @foreach (var branch in Model.AvailableBranches)
+                    {
+                        <div class="form-check p-3 border rounded mb-2">
+                            <input class="form-check-input ms-0 mt-1" type="radio" asp-for="SelectedBranchId" value="@branch.CustomerId" id="branch_@branch.CustomerId">
+                            <label class="form-check-label ms-3" for="branch_@branch.CustomerId">
+                                <strong>@branch.BusinessName</strong><br/>
+                                <small class="text-muted">Type: @branch.BusinessType | Location: @branch.City</small>
+                            </label>
+                        </div>
+                    }
+                    <span asp-validation-for="SelectedBranchId" class="text-danger small"></span>
+                </div>
+
+                <h5 class="section-divider"><span>Account Security</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Password" class="form-label-custom"></label>
+                        <input asp-for="Password" class="form-input-custom" type="password" placeholder="••••••••" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label-custom"></label>
+                        <input asp-for="ConfirmPassword" class="form-input-custom" type="password" placeholder="••••••••" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn-primary-custom">Submit Registration</button>
+                </div>
+            </form>
+
+            <div class="auth-footer mt-4 text-center">
+                <p>Already have an account? <a asp-action="Login" asp-controller="Account" class="auth-link">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Gradient Background to match Login/Register */
+    .auth-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    /* Card Styling */
+    .auth-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 700px;
+        padding: 40px;
+    }
+
+    .auth-title {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .auth-subtitle {
+        color: #777;
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+    }
+
+    /* Section Divider Styling */
+    .section-divider {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        line-height: 0.1em;
+        margin: 25px 0 20px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #888;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    .section-divider span {
+        background: #fff;
+        padding-right: 15px;
+    }
+
+    /* Input Field Styling */
+    .form-label-custom {
+        font-weight: 600;
+        color: #444;
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+        display: block;
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        font-size: 0.95rem;
+    }
+
+    .form-input-custom:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    }
+
+    /* Button Styling */
+    .btn-primary-custom {
+        background: #667eea;
+        color: #fff;
+        border: none;
+        padding: 0.85rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: background 0.3s;
+        letter-spacing: 0.5px;
+        width: 100%;
+    }
+
+    .btn-primary-custom:hover {
+        background: #5a6fd6;
+    }
+
+    /* Link Styling */
+    .auth-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+
+    .form-check {
+        transition: background 0.2s;
+    }
+
+    .form-check:hover {
+        background: #f8f9fa;
+        cursor: pointer;
+    }
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

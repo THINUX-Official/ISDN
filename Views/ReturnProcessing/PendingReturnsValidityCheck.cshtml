@@ -1,0 +1,136 @@
+@model List<ISDN.ViewModels.PendingReturnViewModel>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Pending Returns - Evidence Requests";
+}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Pending Returns</h3>
+        <div class="text-muted small">Review pending returns and request evidence from customers</div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Return ID</th>
+                        <th>Order Number</th>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Products</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var r in Model)
+                    {
+                        <tr>
+                            <td class="align-middle">#@r.ReturnId</td>
+                            <td class="align-middle">@r.OrderNumber</td>
+                            <td class="align-middle">#@r.OrderId</td>
+                            <td class="align-middle">
+                                <div class="fw-bold">@r.CustomerName</div>
+                                <div class="text-muted small">@r.CustomerEmail</div>
+                            </td>
+                            <td class="align-middle">
+                                @foreach(var it in r.Items)
+                                {
+                                    <div>@it.ProductName <span class="text-muted">(x@it.Quantity)</span></div>
+                                }
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge text-warning">Pending</span>
+                            </td>
+                            <td class="align-middle text-end">
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#evidenceModal" data-return='@System.Text.Json.JsonSerializer.Serialize(r)'>
+                                    <i class="fas fa-envelope-open-text me-1"></i> Request Evidence
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="evidenceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-envelope me-2"></i>Send Evidence Request</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="evidenceForm">
+            <input type="hidden" id="ret_id" />
+            <div class="mb-3">
+                <label class="form-label">To</label>
+                <input id="to_email" type="email" class="form-control" readonly />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Subject</label>
+                <input id="email_subject" type="text" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Message Preview</label>
+                <textarea id="email_body" class="form-control" rows="6"></textarea>
+            </div>
+            <div class="text-muted small mb-2">Note: This will send an email via Gmail SMTP (configured in appsettings).</div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="sendEvidenceBtn" type="button" class="btn btn-success">Send Email</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+    var evidenceModal = document.getElementById('evidenceModal');
+    evidenceModal && evidenceModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var data = button.getAttribute('data-return');
+        if (!data) return;
+        var payload = JSON.parse(data);
+        document.getElementById('ret_id').value = payload.ReturnId;
+        document.getElementById('to_email').value = payload.CustomerEmail || '';
+        var productList = payload.Items.map(i => i.ProductName + ' (x' + i.Quantity + ')').join(', ');
+        document.getElementById('email_subject').value = 'Action Required: Evidence Images';
+        document.getElementById('email_body').value = 'Hello ' + (payload.CustomerName || '') + ',\n\nTo process your return for ' + productList + ', please reply to this email with clear images of the items to verify the condition.\n\nThank you,\nISDN Returns Team';
+    });
+
+    document.getElementById('sendEvidenceBtn').addEventListener('click', function () {
+        var btn = this; btn.disabled = true; btn.innerText = 'Sending...';
+        var retId = document.getElementById('ret_id').value;
+        fetch('/ReturnEvidence/SendEvidenceRequest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: 'returnId=' + encodeURIComponent(retId)
+        }).then(r => r.json()).then(j => {
+            btn.disabled = false; btn.innerText = 'Send Email';
+            if (j && j.success) {
+                var modal = bootstrap.Modal.getInstance(evidenceModal) || new bootstrap.Modal(evidenceModal);
+                modal.hide();
+                Swal.fire({icon:'success',title:'Sent',text:j.message});
+            } else {
+                Swal.fire({icon:'error',title:'Error',text:(j && j.message) ? j.message : 'Failed to send email.'});
+            }
+        }).catch(err => {
+            btn.disabled = false; btn.innerText = 'Send Email';
+            Swal.fire({icon:'error',title:'Error',text:err.message || 'Network error'});
+        });
+    });
+</script>
+}

@@ -57,8 +57,11 @@
 
             <div class="auth-footer">
                 <p class="auth-footer-text">
-                    Don't have an account? 
-                    <a asp-action="Register" asp-controller="Account" class="auth-link">Create account</a>
+                    Don't have an account?
+                    <a href="javascript:void(0)"
+                       data-bs-toggle="modal"
+                       data-bs-target="#registrationModal"
+                       class="auth-link">Create account</a>
                 </p>
             </div>
         </div>
