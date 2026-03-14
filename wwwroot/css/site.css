@@ -29,3 +29,64 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* 3. New Unified Auth Styling (Paste these at the very bottom) */
+
+/* Unified Auth Styling */
+.auth-page-wrapper {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.auth-card-large {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 900px;
+    padding: 40px;
+}
+
+.section-divider {
+    width: 100%;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    line-height: 0.1em;
+    margin: 25px 0 20px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #764ba2;
+    font-weight: bold;
+}
+
+    .section-divider span {
+        background: #fff;
+        padding: 0 10px 0 0;
+    }
+
+.form-label-custom {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.form-input-custom {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+    .form-input-custom:focus {
+        border-color: #764ba2;
+        box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        outline: none;
+    }

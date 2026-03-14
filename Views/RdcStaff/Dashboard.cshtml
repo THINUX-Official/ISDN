@@ -50,12 +50,36 @@
     </div>
 
     <div class="row">
+        <!-- Quick Actions Panel -->
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5><i class="fas fa-tasks"></i> Quick Actions</h5>
                 </div>
-                <div class="card-body">
+                <style>
+                                    .ghost-scroll-container {
+                                        max-height: 165px;
+                                        overflow-y: hidden;
+                                    }
+                                    .ghost-scroll-container:hover {
+                                        overflow-y: auto;
+                                    }
+                                    /* Custom Scrollbar */
+                                    .ghost-scroll-container::-webkit-scrollbar {
+                                        width: 6px;
+                                    }
+                                    .ghost-scroll-container::-webkit-scrollbar-track {
+                                        background: transparent;
+                                    }
+                                    .ghost-scroll-container::-webkit-scrollbar-thumb {
+                                        background: rgba(0, 0, 0, 0.2);
+                                        border-radius: 3px;
+                                    }
+                                    .ghost-scroll-container::-webkit-scrollbar-thumb:hover {
+                                        background: rgba(0, 0, 0, 0.4);
+                                    }
+                </style>
+                <div class="card-body ghost-scroll-container">
                     <a asp-action="Inventory" class="btn btn-outline-success w-100 mb-2">
                         <i class="fas fa-warehouse"></i> View Inventory
                     </a>
@@ -63,10 +87,24 @@
                         <i class="fas fa-shopping-cart"></i> View Orders
                     </a>
                     <a asp-controller="Products" asp-action="Manage" class="btn btn-outline-warning w-100 mb-2">
-                        <i class="fas fa-plus-circle"></i> Manage Products
+                        <i class="fas fa-plus-circle"></i> Add Product
                     </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
+                    <hr class="mt-2 mb-3" />
+
+                    <a asp-controller="OrderLifecycle" asp-action="Index" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-project-diagram"></i> View order lifecycles
+                    </a>
+
+
+
+                    <a asp-controller="ReturnProcessing" asp-action="ProcessReturns" class="btn btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-undo-alt"></i> Return Request Processing
+                    </a>
+                    <a asp-controller="ReturnProcessing" asp-action="PendingReturnsValidityCheck" class="btn btn-outline-info w-100 mb-2">
+                        <i class="fas fa-clipboard-check"></i> Return Request Validity Check
+                    </a>
+
+                   
+
+

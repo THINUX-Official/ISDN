@@ -1,0 +1,317 @@
+﻿@model ISDN.ViewModels.RegisterPBOMultiViewModel
+@{
+    ViewData["Title"] = "Multi-Business Registration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page-wrapper">
+    <div class="auth-container">
+        <div class="auth-card" style="max-width: 900px;">
+            <div class="auth-header text-center">
+                <h1 class="auth-title">Multi-Business Registration</h1>
+                <p class="auth-subtitle">Register multiple business types and their respective branches</p>
+            </div>
+
+            <form asp-action="RegisterPBOMulti" method="post" id="multiPboForm" class="auth-form">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <h5 class="section-divider"><span>Owner Information</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="FirstName" class="form-label-custom"></label>
+                        <input asp-for="FirstName" class="form-input-custom" placeholder="John" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="LastName" class="form-label-custom"></label>
+                        <input asp-for="LastName" class="form-input-custom" placeholder="Doe" required />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label-custom"></label>
+                        <input asp-for="Email" class="form-input-custom" type="email" placeholder="you@company.com" required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PhoneNumber" class="form-label-custom"></label>
+                        <input asp-for="PhoneNumber" class="form-input-custom" placeholder="0771234567" required />
+                    </div>
+                </div>
+
+                <div class="row">
+                </div>
+                <div class="mb-3">
+                    <label asp-for="BusinessName" class="form-label-custom">Business Name</label>
+                    <input asp-for="BusinessName" class="form-input-custom" placeholder="Global Enterprises PVT LTD" required />
+                </div>
+
+                <h5 class="section-divider"><span>Business & Branch Setup</span></h5>
+                <div class="info-note-turquoise mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <span>We assume you have more than one branch. Make sure to add the correct unique name for each branch if they differ from the branch type name. Please enter at least one branch each for at least two business type entries. The owner contact info will apply to all branches.</span>
+                </div>
+                <div id="businessTypeContainer">
+                </div>
+
+                <button type="button" class="btn btn-primary btn-sm mt-2 mb-4" onclick="addBusinessGroup()">
+                    <i class="fas fa-plus-circle me-1"></i> Add Another Business Type
+                </button>
+
+                <h5 class="section-divider"><span>Registration Preference</span></h5>
+                <div class="info-note-turquoise mb-3">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Select "I'd like a code" if you have managers who should access specific branches or one or more overseers who have access rights to all your registered branches working in your 'stead.</span>
+                </div>
+                <div class="mb-4 p-3 bg-light border">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" asp-for="RegistrationPreference" value="Code" id="prefCode" checked>
+                        <label class="form-check-label" for="prefCode">I'd like a system generated code (for managers)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="RegistrationPreference" value="Self" id="prefSelf">
+                        <label class="form-check-label" for="prefSelf">I'd like to oversee everything myself</label>
+                    </div>
+                </div>
+
+                <h5 class="section-divider"><span>Security</span></h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Password" class="form-label-custom">Password</label>
+                        <div class="password-wrapper">
+                            <input asp-for="Password" id="regPass" class="form-input-custom" type="password" placeholder="Min 8 characters" required />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('regPass', this)"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label-custom">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input asp-for="ConfirmPassword" id="conPass" class="form-input-custom" type="password" placeholder="Repeat password" required />
+                            <i class="fas fa-eye toggle-icon" onclick="togglePassword('conPass', this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-note mb-4">
+                    <i class="fas fa-clock"></i>
+                    <span>Account activation usually takes within 24 hours.</span>
+                </div>
+
+
+                <button type="submit" class="btn-auth-submit">
+                    <i class="fas fa-user-plus me-2"></i> Submit Multi-Business Registration
+                </button>
+            </form>
+            <div class="auth-footer mt-4 text-center">
+                <p>Already have an account? <a asp-action="Login" class="auth-link">Sign In</a></p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Reuse your existing styles from RegisterPBOSingle */
+    .business-group-card {
+        border: 1px solid #ddd;
+        border-left: 5px solid #764ba2;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .branch-table-header {
+        font-size: 0.8rem;
+        background: #f8f9fa;
+    }
+
+    .auth-page-wrapper {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    .auth-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 700px;
+        padding: 40px;
+    }
+
+    .section-divider {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        line-height: 0.1em;
+        margin: 25px 0 20px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #764ba2;
+        font-weight: bold;
+    }
+
+        .section-divider span {
+            background: #fff;
+            padding: 0 10px 0 0;
+        }
+
+    .form-label-custom {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .toggle-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #aaa;
+    }
+
+    .info-note {
+        background: #eef2ff;
+        border-left: 4px solid #667eea;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-note-turquoise {
+        background: #e0f7fa;
+        border-left: 4px solid #00acc1;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #006064;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-auth-submit {
+        width: 100%;
+        background: linear-gradient(to right, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .auth-link {
+        color: #764ba2;
+        text-decoration: none;
+        font-weight: 600;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let groupCount = 0;
+
+        function addBusinessGroup() {
+            const container = document.getElementById('businessTypeContainer');
+            const groupId = groupCount;
+
+            const groupHtml = `
+                <div class="business-group-card" id="group_${groupId}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-primary fw-bold">Business Category #${groupId + 1}</h6>
+                        ${groupId > 0 ? `<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeGroup(${groupId})"><i class="fas fa-times"></i></button>` : ''}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label-custom">Business Type</label>
+                            <input name="BusinessGroups[${groupId}].BusinessType" class="form-input-custom" placeholder="e.g. Supermarket, Restaurant" required />
+                        </div>
+                       
+                    </div>
+
+                    <table class="table table-sm table-bordered mt-2">
+                        <thead class="branch-table-header text-center">
+                           <tr style="font-size: 0.85rem; color: #555;">
+                                <th>Branch Name</th>
+                                <th>Street Address</th>
+                                <th>City</th>
+                                <th>Zip Code</th>
+                                <th width="40"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="branchBody_${groupId}">
+                            </tbody>
+                    </table>
+                    <button type="button" class="btn btn-outline-secondary btn-xs" onclick="addBranchToGroup(${groupId})">
+                        <i class="fas fa-plus me-1"></i> Add Another Branch
+                    </button>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', groupHtml);
+            addBranchToGroup(groupId); // Add first branch automatically
+            groupCount++;
+        }
+
+        function addBranchToGroup(groupId) {
+            const tbody = document.getElementById(`branchBody_${groupId}`);
+            const branchIndex = tbody.children.length;
+
+            const branchHtml = `
+                <tr>
+                    <td><input name="BusinessGroups[${groupId}].Branches[${branchIndex}].BranchName" class="form-input-custom py-1" required /></td>
+                    <td><input name="BusinessGroups[${groupId}].Branches[${branchIndex}].StreetAddress" class="form-input-custom py-1" required /></td>
+                    <td><input name="BusinessGroups[${groupId}].Branches[${branchIndex}].City" class="form-input-custom py-1" required /></td>
+                    <td><input name="BusinessGroups[${groupId}].Branches[${branchIndex}].ZipCode" class="form-input-custom py-1" required /></td>
+                    <td class="text-center">
+                        ${branchIndex > 0 ? `<button type="button" class="btn text-danger p-0" onclick="this.closest('tr').remove()"><i class="fas fa-trash-alt"></i></button>` : ''}
+                    </td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', branchHtml);
+        }
+
+        function togglePassword(inputId, icon) {
+                  const input = document.getElementById(inputId);
+                  if (input.type === 'password') {
+                      input.type = 'text';
+                      icon.classList.replace('fa-eye', 'fa-eye-slash');
+                  } else {
+                      input.type = 'password';
+                      icon.classList.replace('fa-eye-slash', 'fa-eye');
+                  }
+              }
+
+        function removeGroup(id) {
+            document.getElementById(`group_${id}`).remove();
+        }
+
+        // Initialize with one group on load
+        document.addEventListener('DOMContentLoaded', () => {
+            addBusinessGroup();
+        });
+    </script>
+}
