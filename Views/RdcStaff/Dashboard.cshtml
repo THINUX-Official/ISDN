@@ -107,9 +107,7 @@
 
                     <hr class="mt-2 mb-3"/>
 
-                    <a href="#" class="btn btn-outline-primary w-100 mb-2">
-                        <i class="fas fa-project-diagram"></i> View order lifecycles
-                    </a>
+                    
                     <button class="btn btn-outline-primary w-100 mb-2" onclick="generateReplenishment()">
                         <i class="fas fa-sync-alt"></i> Stock Replenishment requests
                     </button>
@@ -120,7 +118,7 @@
                         <i class="fas fa-chart-pie"></i> Shortage Prediction
                     </button>
 
-                    <button class="btn btn-outline-danger w-100 mb-2" onclick="redistributeStock()">
+                    <button class="btn btn-outline-danger w-100 mb-2" data-bs-toggle="modal" data-bs-target="#redistributeModal">
                         <i class="fas fa-share-alt"></i> Redistribute RDC Stock
                     </button>
 
@@ -128,16 +126,16 @@
                         <i class="fas fa-box-open"></i> Request Assisting RDC to Pack
                     </button>
 
-                    <a href="#" class="btn btn-outline-warning w-100 mb-2">
-                        <i class="fas fa-undo-alt"></i> Return Request Processing
-                    </a>
-                    <a href="#" class="btn btn-outline-info w-100 mb-2">
-                        <i class="fas fa-clipboard-check"></i> Return Request Validity Check
-                    </a>
+
 
                     <button class="btn btn-outline-dark w-100 mb-2" data-bs-toggle="modal" data-bs-target="#controlTowerModal">
                         <i class="fas fa-satellite-dish"></i> Open Live Control Tower
                     </button>
+
+                    <!-- Stock Management moved into Quick Actions -->
+                    <a asp-controller="StockTransfer" asp-action="StockManagement" class="btn btn-outline-secondary w-100 mb-2">
+                        <i class="fas fa-truck-loading"></i> Stock Management
+                    </a>
                 </div>
             </div>
         </div>
@@ -194,9 +192,7 @@
     </div>
   </div>
 </div>
-                    <a asp-controller="StockTransfer" asp-action="StockManagement" class="btn btn-outline-secondary w-100 mb-2">
-                        <i class="fas fa-truck-loading"></i> Stock Management
-                    </a>
+                    
 
                    
 
@@ -251,15 +247,43 @@
                 <input type="number" class="form-control" id="orderId" min="1" required>
             </div>
             <div class="mb-3">
-                <label for="assistingRdcId" class="form-label">Assisting RDC ID</label>
-                <input type="number" class="form-control" id="assistingRdcId" min="1" required>
+                <label for="assistingRdcId" class="form-label">Assisting RDC</label>
+                <select class="form-select" id="assistingRdcId" required>
+                    <option value="">Loading RDCs...</option>
+                </select>
             </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-success" onclick="submitPackRequest()">Send Request</button>
+          <button type="button" class="btn btn-success" id="sendPackRequestBtn">Send Request</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Redistribute Modal -->
+<div class="modal fade" id="redistributeModal" tabindex="-1" aria-labelledby="redistributeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="redistributeModalLabel">Redistribute RDC Stock</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+            <label for="selectInactiveRdc" class="form-label">Select Inactive RDC to Liquidate</label>
+            <select id="selectInactiveRdc" class="form-select">
+                <option value="">Loading inactive RDCs...</option>
+            </select>
+        </div>
+        <div id="inactiveRdcProducts" class="mt-3" style="max-height:300px; overflow:auto; display:none;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmRedistributeBtn">Confirm Redistribute</button>
+      </div>
     </div>
   </div>
 </div>
@@ -344,20 +368,16 @@
             });
         }
 
-        function redistributeStock() {
-            let rdcId = prompt("Enter RDC ID to drop and redistribute its stock:");
-            if (rdcId) {
-                $.post('@Url.Action("RedistributeStock", "RdcStaff")', { dropRdcId: rdcId }, function() {
-                    alert("Stock redistribution initiated.");
-                    location.reload();
-                });
-            }
-        }
+        // Legacy redistribute action removed in favor of modal-based flow
+                function redistributeStock() {
+                    $('#redistributeModal').modal('show');
+                }
 
         function submitPackRequest() {
             const orderId = $('#orderId').val();
             const targetId = $('#assistingRdcId').val();
-            $.post('@Url.Action("RequestPack", "RdcStaff")', { orderId: orderId, assistingRdcId: targetId }, function(res) {
+            // Use RdcAssistance SendRequest which sends formatted email via SMTP
+            $.post('@Url.Action("SendRequest", "RdcAssistance")', { orderId: orderId, targetRdcId: targetId }, function(res) {
                 if(res.success) {
                     alert(res.message);
                     $('#packRequestModal').modal('hide');
@@ -366,5 +386,75 @@
                 }
             });
         }
+
+        // New JS: populate assisting RDC dropdown when modal opens
+        $('#packRequestModal').on('show.bs.modal', function () {
+            var select = $('#assistingRdcId');
+            select.empty();
+            select.append('<option value="">Loading RDCs...</option>');
+            $.get('@Url.Action("Index", "RdcAssistance")', function() {
+                // Call backend endpoint to get list of active RDCs from RdcAssistance Index view model
+                $.get('@Url.Action("GetMapData", "RdcStaff")', function(res) {
+                    select.empty();
+                    if (res.success && res.rdcs.length > 0) {
+                        select.append('<option value="">Select RDC</option>');
+                        res.rdcs.forEach(function(r){
+                            if(!r.isCurrent) select.append('<option value="'+r.id+'">'+r.name+' ('+r.id+')</option>');
+                        });
+                    } else {
+                        select.append('<option value="">No RDCs available</option>');
+                    }
+                });
+            });
+        });
+
+        $('#sendPackRequestBtn').on('click', function(e) {
+            e.preventDefault();
+            submitPackRequest();
+        });
+
+        // Redistribute modal logic
+        $('#redistributeModal').on('show.bs.modal', function() {
+            var sel = $('#selectInactiveRdc');
+            sel.empty();
+            sel.append('<option value="">Loading inactive RDCs...</option>');
+            $.get('@Url.Action("GetInactiveRdcs", "RdcStaff")', function(res){
+                sel.empty();
+                if(res.success && res.rdcs.length>0){
+                    sel.append('<option value="">Select RDC</option>');
+                    res.rdcs.forEach(function(r){ sel.append('<option value="'+r.id+'">'+r.name+' ('+r.id+')</option>'); });
+                } else {
+                    sel.append('<option value="">No inactive RDCs found</option>');
+                }
+            });
+        });
+
+        $('#selectInactiveRdc').on('change', function(){
+            var id = $(this).val();
+            var container = $('#inactiveRdcProducts');
+            if(!id){ container.hide(); return; }
+            container.show();
+            container.html('<p>Loading products...</p>');
+            $.get('@Url.Action("GetRdcProducts", "RdcStaff")', { rdcId: id }, function(res){
+                if(res.success){
+                    var html = '<table class="table"><thead><tr><th>Product</th><th>Available</th><th>Reserved</th></tr></thead><tbody>';
+                    res.products.forEach(function(p){ html += '<tr><td>'+p.productName+'</td><td>'+p.available+'</td><td>'+p.reserved+'</td></tr>'; });
+                    html += '</tbody></table>';
+                    container.html(html);
+                } else {
+                    container.html('<p>No products found.</p>');
+                }
+            });
+        });
+
+        $('#confirmRedistributeBtn').on('click', function(){
+            var id = $('#selectInactiveRdc').val();
+            if(!id){ alert('Please select an RDC to redistribute.'); return; }
+            if(!confirm('This will redistribute all available stock from the selected inactive RDC to active RDCs. Continue?')) return;
+            $.post('@Url.Action("RedistributeStock", "RdcStaff")', { dropRdcId: id }, function(){
+                alert('Stock redistribution initiated.');
+                location.reload();
+            });
+        });
     </script>
 }
