@@ -9,7 +9,8 @@
                     <p class="text-muted small mb-0">Update your contact details and security credentials</p>
                 </div>
                 <div class="card-body p-4 p-md-5">
-                    <form asp-action="EditProfile" method="post">
+                    <form id="editProfileForm" method="post">
+                        @Html.AntiForgeryToken()
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">First Name</label>
@@ -25,7 +26,8 @@
                                     <span class="input-group-text bg-light border-0"><i class="fas fa-envelope text-muted"></i></span>
                                     <input asp-for="Email" class="form-control bg-light border-0 py-2" type="email">
                                 </div>
-                                <div class="form-text text-info">Changing this will update your login username.</div>
+                                <!-- Removed the previous "Changing this will update your login username." note
+                                     Users can change their email regardless of stored login username. -->
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Phone Number</label>
@@ -40,7 +42,7 @@
                                 <hr class="my-4">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <a href="/Customer/Dashboard" class="text-muted text-decoration-none small"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
-                                    <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm py-2 fw-bold">
+                                    <button id="updateProfileBtn" type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm py-2 fw-bold">
                                         Update Profile
                                     </button>
                                 </div>
@@ -71,3 +73,103 @@
         </div>
     </div>
 </div>
+
+<!-- Current Password Modal -->
+<div class="modal fade" id="currentPwdModal" tabindex="-1" aria-labelledby="currentPwdModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="currentPwdModalLabel">Confirm Current Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">Enter your current password to confirm profile changes. If you've forgotten it, please reset via the login interface.</p>
+        <div class="mb-3">
+          <label class="form-label">Current Password</label>
+          <input id="currentPasswordInput" class="form-control" type="password" />
+          <div id="currentPwdError" class="text-danger small mt-2" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelPwdBtn" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="confirmPwdBtn" type="button" class="btn btn-primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const form = document.getElementById('editProfileForm');
+            const modalEl = document.getElementById('currentPwdModal');
+            const bootstrapModal = new bootstrap.Modal(modalEl, { keyboard: false, backdrop: 'static' });
+            const confirmBtn = document.getElementById('confirmPwdBtn');
+            const currentPwdInput = document.getElementById('currentPasswordInput');
+            const errorDiv = document.getElementById('currentPwdError');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                errorDiv.style.display = 'none';
+                currentPwdInput.value = '';
+                bootstrapModal.show();
+                setTimeout(() => currentPwdInput.focus(), 200);
+            });
+
+            confirmBtn.addEventListener('click', async function () {
+                errorDiv.style.display = 'none';
+                const currentPassword = currentPwdInput.value || '';
+                if (!currentPassword) {
+                    errorDiv.textContent = 'Please enter your current password.';
+                    errorDiv.style.display = 'block';
+                    currentPwdInput.focus();
+                    return;
+                }
+
+                // Collect form data
+                const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : '';
+                const formData = new FormData(form);
+                formData.append('CurrentPassword', currentPassword);
+
+                try {
+                    confirmBtn.disabled = true;
+                    confirmBtn.innerHTML = 'Processing...';
+
+                    const resp = await fetch('/Profile/UpdateProfile', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': token
+                        },
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+
+                    const json = await resp.json();
+                    if (json.success) {
+                        // Redirect on success (server may provide a redirect URL)
+                        window.location = json.redirectUrl || '/Customer/Dashboard';
+                    } else {
+                        errorDiv.textContent = json.error || 'An error occurred while updating your profile.';
+                        errorDiv.style.display = 'block';
+                        confirmBtn.disabled = false;
+                        confirmBtn.innerHTML = 'Confirm';
+                    }
+                } catch (ex) {
+                    errorDiv.textContent = 'A network error occurred. Please try again.';
+                    errorDiv.style.display = 'block';
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = 'Confirm';
+                }
+            });
+
+            // Hide error when modal closed
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                errorDiv.style.display = 'none';
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = 'Confirm';
+            });
+        })();
+    </script>
+}
